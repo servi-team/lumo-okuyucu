@@ -1,5 +1,7 @@
 # Proton Lumo Sohbet Okuyucu
 
+<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/95db1b84-673c-4454-835f-e551dcfaaa47" />
+
 Proton Lumo'dan dışa aktarılan sohbet JSON dosyalarını tarayıcıda okumak, düzenlemek ve arşivlemek için tek dosyalık bir uygulama.
 
 Kurulum, derleme adımı veya harici bir kütüphane gerektirmez. Tüm HTML, CSS ve JavaScript `lumo-okuyucu.html` içindedir.
