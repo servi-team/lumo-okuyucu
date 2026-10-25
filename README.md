@@ -2,7 +2,7 @@
 
 Proton Lumo'dan dışa aktarılan sohbet JSON dosyalarını tarayıcıda okumak, düzenlemek ve arşivlemek için tek dosyalık bir uygulama.
 
-<img width="1366" height="768" alt="image" src="https://github.com/user-attachments/assets/16a76aed-9392-46c8-aafa-88c45b0aa5ba" />
+<img width="1366" height="654" alt="Screenshot_20261025_220743-1" src="https://github.com/user-attachments/assets/8e625540-66b4-40af-88ee-ac1ecc22b4a3" />
 
 Kurulum, derleme adımı veya harici bir kütüphane gerektirmez. Tüm HTML, CSS ve JavaScript `lumo-okuyucu.html` içindedir.
 
