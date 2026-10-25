@@ -1,0 +1,2618 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumo Sohbet Okuyucu</title>
+<style>
+:root{
+  --bg:#f6f4fb; --panel:#ffffff; --sidebar:#efebfa; --border:#e2dcf3;
+  --text:#1c1830; --muted:#6f6a85; --accent:#6d4aff; --accent-2:#a855f7;
+  --accent-soft:#e9e3ff; --user-bg:#6d4aff; --user-text:#fff;
+  --ai-bg:#ffffff; --code-bg:#17142a; --code-text:#e8e4ff; --inline-code:#efeafe;
+  --shadow:0 6px 24px rgba(60,30,140,.10); --hover:rgba(109,74,255,.08);
+  --gold:#d97706; --danger:#dc2626; --ok:#059669;
+  --glass:rgba(246,244,251,.82); --scrim:rgba(20,12,46,.45);
+}
+:root[data-theme="dark"]{
+  --bg:#12101d; --panel:#1a1729; --sidebar:#161325; --border:#2a2544;
+  --text:#ece9f8; --muted:#9a95b5; --accent:#8b6dff; --accent-2:#c084fc;
+  --accent-soft:#2b2352; --user-bg:#5b3df0; --user-text:#fff;
+  --ai-bg:#1e1a31; --code-bg:#0d0b18; --code-text:#e8e4ff; --inline-code:#2a2447;
+  --shadow:0 6px 24px rgba(0,0,0,.35); --hover:rgba(139,109,255,.12);
+  --gold:#fbbf24; --danger:#f87171; --ok:#34d399;
+  --glass:rgba(18,16,29,.82); --scrim:rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;overflow:hidden;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:disabled{opacity:.38;cursor:default}
+input,select,textarea{font:inherit;color:inherit}
+svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hidden{display:none!important}
+.sp{flex:1}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px;border:2px solid transparent;background-clip:content-box}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- Sidebar ---------- */
+#sidebar{width:342px;flex:none;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;min-height:0;z-index:20;transition:transform .25s ease,width .22s ease,opacity .2s ease;position:relative}
+#sidebarResizer{position:absolute;top:0;right:-3px;bottom:0;width:7px;cursor:col-resize;z-index:35;touch-action:none}
+#sidebarResizer::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:1px;background:transparent;transition:background .15s}
+#sidebarResizer:hover::after{background:var(--accent)}
+body.resizing{cursor:col-resize;user-select:none}
+body.resizing #sidebar{transition:none}
+#expandBtn{display:none}
+body.sidebar-collapsed #sidebar{width:0!important;min-width:0!important;border-right:0;overflow:hidden;opacity:0;pointer-events:none;transform:translateX(-18px)}
+body.sidebar-collapsed #sidebarResizer{display:none}
+body.sidebar-collapsed #expandBtn{display:inline-grid}
+.brand{display:flex;align-items:center;gap:10px;padding:16px 14px 8px}
+.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#fff;box-shadow:0 4px 14px rgba(109,74,255,.42);flex:none}
+.logo svg{width:19px;height:19px;stroke-width:2.2}
+.brand-text{min-width:0;flex:1}
+.brand h1{font-size:15.5px;margin:0;font-weight:750;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{display:block;color:var(--muted);font-size:11.5px;font-weight:500;margin-top:1px}
+.icon-btn{width:34px;height:34px;border-radius:10px;display:inline-grid;place-items:center;color:var(--muted);transition:background .15s,color .15s,transform .15s;flex:none}
+.icon-btn:hover{background:var(--hover);color:var(--text)}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn.bordered{border:1px solid var(--border);background:var(--panel)}
+.icon-btn.active{background:var(--accent-soft);color:var(--accent)}
+.side-actions{padding:4px 14px 8px;display:flex;flex-direction:column;gap:8px}
+.btn-primary{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-weight:650;font-size:13.5px;box-shadow:0 6px 16px rgba(109,74,255,.32);transition:.15s}
+.btn-primary:hover{transform:translateY(-1px);filter:brightness(1.07)}
+.btn-primary svg{width:17px;height:17px}
+.btn-row{display:flex;gap:8px}
+.btn-soft{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:12.5px;font-weight:550;transition:.15s}
+.btn-soft:hover{background:var(--hover);border-color:color-mix(in srgb,var(--accent) 35%,var(--border))}
+.btn-soft svg{width:15px;height:15px;color:var(--muted)}
+.search{position:relative}
+.search>svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--muted);width:15px;height:15px;pointer-events:none}
+.search input{width:100%;padding:9px 34px 9px 34px;border-radius:11px;border:1px solid var(--border);background:var(--panel);color:var(--text);font-size:13px;outline:none;transition:.15s}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.search input::placeholder{color:var(--muted)}
+.search-clear{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--muted)}
+.search-clear:hover{background:var(--hover);color:var(--text)}
+.search-clear svg{width:13px;height:13px}
+.side-scroll{flex:1;overflow-y:auto;padding:2px 10px 18px;min-height:0}
+.sort-row{display:flex;align-items:center;gap:8px;padding:6px 5px 2px;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);font-weight:700}
+.sort-row select{margin-left:auto;max-width:212px;padding:5px 26px 5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--panel);color:var(--text);font-size:11.5px;text-transform:none;letter-spacing:0;outline:none;cursor:pointer;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 50%,calc(100% - 9px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+.sort-row select:focus{border-color:var(--accent)}
+.section-head{display:flex;align-items:center;gap:6px;padding:14px 7px 5px;font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--muted);font-weight:750;user-select:none}
+.section-head .count{font-size:10px;background:color-mix(in srgb,var(--muted) 14%,transparent);padding:1px 6px;border-radius:99px;letter-spacing:0}
+.section-head .sp{flex:1}
+.section-head button{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;color:var(--muted)}
+.section-head button:hover{background:var(--hover);color:var(--text)}
+.section-head button svg{width:13px;height:13px}
+.section-head.clickable{cursor:pointer;border-radius:8px}
+.section-head.clickable:hover{color:var(--text)}
+.section-head.clickable.active{color:var(--accent)}
+.folder-row{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:10px;cursor:pointer;position:relative;transition:background .12s}
+.folder-row:hover{background:var(--hover)}
+.folder-row.active{background:var(--accent-soft)}
+.folder-dot{width:9px;height:9px;border-radius:50%;background:var(--fc,var(--accent));box-shadow:0 0 0 3px color-mix(in srgb,var(--fc,var(--accent)) 16%,transparent);flex:none}
+.folder-row .fname{flex:1;min-width:0;font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folder-row .n{font-size:10.5px;color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent);padding:1px 6px;border-radius:99px}
+.folder-row .fnote{color:var(--gold);display:inline-grid;place-items:center}
+.folder-row .fnote svg{width:12px;height:12px}
+.folder-row .fmenu{opacity:0;width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:var(--muted)}
+.folder-row:hover .fmenu{opacity:1}
+.folder-row .fmenu:hover{background:var(--hover);color:var(--text)}
+.folder-row .fmenu svg{width:14px;height:14px}
+.folder-row.drop-target{outline:2px dashed var(--accent);background:var(--accent-soft)}
+.item{display:grid;grid-template-columns:24px minmax(0,1fr) auto 24px;align-items:center;gap:6px;padding:7px 4px 7px 6px;border-radius:11px;cursor:pointer;position:relative;transition:background .12s;user-select:none}
+.item:hover{background:var(--hover)}
+.item.active{background:var(--accent-soft)}
+.item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--accent)}
+.item.dragging{opacity:.45}
+.item.drop-target{box-shadow:inset 0 2px 0 var(--accent)}
+.item .t{min-width:0}
+.item .t b{display:block;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+.item .t span{display:block;font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+.item .t span mark{background:color-mix(in srgb,var(--gold) 35%,transparent);color:inherit;border-radius:3px;padding:0 1px}
+.item .badges{display:flex;align-items:center;gap:4px;color:var(--muted)}
+.item .badges span{display:inline-flex;align-items:center;gap:2px;font-size:10px}
+.item .badges svg{width:12px;height:12px}
+.star-btn{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:color-mix(in srgb,var(--muted) 55%,transparent);transition:.12s}
+.star-btn:hover{background:var(--hover);color:var(--gold)}
+.star-btn.active{color:var(--gold)}
+.star-btn.active svg{fill:currentColor}
+.star-btn svg{width:15px;height:15px}
+.more-btn{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--muted);opacity:0;transition:.12s}
+.item:hover .more-btn,.item.active .more-btn,.item:focus-within .more-btn{opacity:1}
+.more-btn:hover{background:var(--hover);color:var(--text)}
+.more-btn svg{width:15px;height:15px}
+.group-label{padding:11px 8px 3px;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700}
+.empty-list{color:var(--muted);font-size:12.5px;text-align:center;padding:26px 12px;line-height:1.6}
+.sort-hint{display:flex;align-items:center;gap:6px;padding:7px 8px;margin:4px 2px;border:1px dashed var(--border);border-radius:8px;font-size:11px;color:var(--muted)}
+.sort-hint svg{width:13px;height:13px}
+.folder-banner{margin:5px 2px 8px;padding:11px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--fc,var(--accent))}
+.folder-banner .fb-head{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:650}
+.folder-banner .fb-head .sp{flex:1}
+.folder-banner p{margin:5px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5;white-space:pre-wrap;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.folder-banner .edit{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:var(--muted)}
+.folder-banner .edit:hover{background:var(--hover);color:var(--text)}
+.folder-banner .edit svg{width:13px;height:13px}
+.side-foot{padding:10px 14px;border-top:1px solid var(--border);font-size:10.5px;color:var(--muted);display:flex;align-items:center;gap:7px;flex:none}
+.foot-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 15%,transparent);flex:none}
+#storageInfo{font-size:10px;opacity:.8}
+
+/* ---------- Main ---------- */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;position:relative}
+header.top{height:62px;flex:none;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-bottom:1px solid var(--border);background:var(--glass);backdrop-filter:blur(12px);z-index:5}
+#menuBtn{display:none}
+header.top .title{flex:1;min-width:0}
+header.top h2{margin:0;font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.35}
+header.top .meta{font-size:11.5px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;align-items:center;gap:1px;flex:none}
+.top-actions .icon-btn{width:33px;height:33px}
+.top-actions .icon-btn.active{color:var(--accent)}
+#mediaBtn{position:relative}
+#mediaBtn .badge{position:absolute;top:2px;right:1px;min-width:14px;height:14px;padding:0 3px;border-radius:99px;background:var(--accent);color:#fff;font-size:9px;font-weight:700;display:grid;place-items:center;line-height:1}
+#findbar{display:flex;align-items:center;gap:6px;padding:7px 14px;border-bottom:1px solid var(--border);background:var(--panel);flex:none}
+#findbar input{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px;outline:none}
+#findbar input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.find-count{font-size:11px;color:var(--muted);min-width:48px;text-align:center;font-variant-numeric:tabular-nums}
+#findbar .icon-btn{width:30px;height:30px}
+#chatArea{flex:1;min-height:0;position:relative}
+#welcome{height:100%;display:flex;align-items:center;justify-content:center;padding:30px;overflow:auto}
+#chat{height:100%;overflow-y:auto;scroll-behavior:smooth}
+.thread{max-width:900px;margin:0 auto;padding:26px 26px 70px;display:flex;flex-direction:column;gap:24px}
+.msg{display:flex;gap:11px;animation:rise .3s ease}
+@keyframes rise{from{transform:translateY(6px)}to{transform:none}}
+.msg.user{flex-direction:row-reverse}
+.avatar{width:33px;height:33px;border-radius:10px;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12.5px;margin-top:2px}
+.msg.assistant .avatar{background:linear-gradient(135deg,var(--accent),var(--accent-2));box-shadow:0 4px 12px rgba(109,74,255,.35)}
+.msg.user .avatar{background:var(--border);color:var(--muted)}
+.body{min-width:0;max-width:calc(100% - 44px)}
+.msg.user .body{display:flex;flex-direction:column;align-items:flex-end;max-width:min(680px,84%)}
+.msg.assistant .body{flex:1;max-width:none}
+.bubble{padding:12px 16px;border-radius:17px;line-height:1.65;font-size:14.5px;overflow-wrap:anywhere}
+.msg.user .bubble{background:var(--user-bg);color:var(--user-text);border-bottom-right-radius:6px;white-space:pre-wrap;box-shadow:0 6px 18px rgba(91,61,240,.28);max-width:100%}
+.msg.assistant .bubble{background:var(--ai-bg);border:1px solid var(--border);border-top-left-radius:6px;box-shadow:var(--shadow);width:100%}
+.info{display:flex;align-items:center;gap:7px;margin-top:5px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+.msg.user .info{justify-content:flex-end}
+.chip{padding:2px 7px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:10.5px;white-space:nowrap}
+.copy{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:7px;color:var(--muted);font-size:10.5px;transition:.12s}
+.copy:hover{background:var(--hover);color:var(--text)}
+.copy svg{width:12px;height:12px}
+.msg-act{width:22px;height:22px;border-radius:6px;display:inline-grid;place-items:center;color:var(--muted);opacity:0;transition:.12s}
+.msg:hover .msg-act,.msg-act:focus-visible{opacity:1}
+.msg-act:hover{background:var(--hover);color:var(--text)}
+.msg-act.danger:hover{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)}
+.msg-act svg{width:12px;height:12px}
+.msg.assistant .avatar svg{width:19px;height:19px;stroke:#fff;stroke-width:1.7}
+.thread-add{margin-top:6px;padding:15px;border:1px dashed var(--border);border-radius:14px;background:color-mix(in srgb,var(--panel) 60%,transparent);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.thread-add .ta-label{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);flex:1;min-width:140px}
+.thread-add button{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:9px;border:1px solid var(--border);background:var(--panel);font-size:12px;font-weight:600;transition:.12s}
+.thread-add button:hover{border-color:color-mix(in srgb,var(--accent) 40%,var(--border));background:var(--accent-soft);color:var(--accent)}
+.thread-add button svg{width:14px;height:14px}
+.msg-atts-edit{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.msg-att-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);font-size:12px}
+.msg-att-row .ar-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550}
+.msg-att-row .ar-size{font-size:10.5px;color:var(--muted)}
+.msg-att-row button{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:var(--muted)}
+.msg-att-row button:hover{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)}
+.msg-att-row button svg{width:13px;height:13px}
+.msg-att-empty{font-size:11.5px;color:var(--muted);padding:5px 0 8px}
+.chat-note{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:14px;padding:13px 16px;box-shadow:var(--shadow)}
+.chat-note .cn-head{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px}
+.chat-note .cn-head .sp{flex:1}
+.chat-note .cn-head .edit{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;color:var(--muted)}
+.chat-note .cn-head .edit:hover{background:var(--hover);color:var(--text)}
+.chat-note .cn-head .edit svg{width:14px;height:14px}
+.chat-note .cn-body{margin-top:6px;font-size:13px;line-height:1.65;white-space:pre-wrap;color:var(--text)}
+.msg-atts{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.att-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px 5px 5px;border-radius:10px;background:var(--accent-soft);border:1px solid color-mix(in srgb,var(--accent) 18%,transparent);color:var(--text);font-size:11.5px;max-width:240px;transition:.12s}
+.att-chip:hover{filter:brightness(.97);transform:translateY(-1px)}
+.att-chip .att-thumb{width:34px;height:34px;border-radius:7px;object-fit:cover;background:var(--border);flex:none}
+.att-chip .att-ic{width:30px;height:30px;border-radius:7px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);flex:none}
+.att-chip .att-ic svg{width:15px;height:15px}
+.att-chip .an{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550}
+.msg.user .att-chip{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.22);color:#fff}
+.msg.user .att-chip .att-ic{background:rgba(255,255,255,.18);color:#fff}
+.msg.user .att-chip .att-thumb{background:rgba(255,255,255,.2)}
+.version-picker{display:inline-flex;align-items:center;gap:4px;padding:3px 7px;border-radius:7px;border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);background:color-mix(in srgb,var(--accent) 8%,transparent);color:var(--accent);font-size:10.5px;font-weight:650;max-width:100%;transition:.12s}
+.version-picker:hover{background:var(--accent-soft)}
+.version-picker>svg{width:11px;height:11px;flex:none}
+.version-picker>svg:last-child{width:10px;height:10px;opacity:.8}
+.version-pop-head{font-size:10px;font-weight:750;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:5px 8px 6px}
+.version-row{display:flex;align-items:center;gap:6px;padding:6px 5px 6px 8px;border-radius:8px;cursor:pointer;transition:.12s}
+.version-row:hover{background:var(--hover)}
+.version-row.current{background:var(--accent-soft)}
+.version-row .vr-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.version-row .vr-title{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--text)}
+.version-row .vr-cur{font-size:8.5px;font-weight:750;text-transform:uppercase;letter-spacing:.4px;color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);padding:1px 5px;border-radius:99px}
+.version-row .vr-snip{font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.version-row .vr-del{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;color:var(--muted);flex:none;transition:.12s}
+.version-row .vr-del:hover{background:color-mix(in srgb,var(--danger) 13%,transparent);color:var(--danger)}
+.version-row .vr-del svg{width:12px;height:12px}
+
+/* ---------- Markdown ---------- */
+.md>*:first-child{margin-top:0}.md>*:last-child{margin-bottom:0}
+.md h1,.md h2,.md h3,.md h4{margin:1.25em 0 .5em;line-height:1.3}
+.md h1{font-size:1.42em}.md h2{font-size:1.25em;padding-bottom:.28em;border-bottom:1px solid var(--border)}.md h3{font-size:1.1em}.md h4{font-size:1em}
+.md p{margin:.65em 0}
+.md ul,.md ol{margin:.55em 0;padding-left:1.35em}
+.md li{margin:.22em 0}
+.md li::marker{color:var(--accent)}
+.md a{color:var(--accent);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.md a:hover{border-bottom-color:var(--accent)}
+.md blockquote{margin:.85em 0;padding:.35em 1em;border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0}
+.md hr{border:0;border-top:1px solid var(--border);margin:1.2em 0}
+.md code.ic{background:var(--inline-code);padding:.14em .42em;border-radius:5px;font-size:.88em;font-family:ui-monospace,"JetBrains Mono",Consolas,monospace}
+.md em{font-style:italic}
+.tbl{overflow-x:auto;margin:.85em 0;border:1px solid var(--border);border-radius:11px}
+.md table{border-collapse:collapse;width:100%;font-size:13.5px}
+.md th,.md td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.md th{background:var(--accent-soft);font-weight:650;white-space:nowrap}
+.md tr:last-child td{border-bottom:0}
+.code{margin:.85em 0;border-radius:11px;overflow:hidden;background:var(--code-bg);border:1px solid var(--border)}
+.code .bar{display:flex;align-items:center;justify-content:space-between;padding:6px 11px;background:rgba(255,255,255,.06);font-size:11.5px;color:#b9b2e0}
+.code .bar button{color:#b9b2e0;display:inline-flex;gap:5px;align-items:center;padding:3px 7px;border-radius:6px;font-size:11.5px}
+.code .bar button:hover{background:rgba(255,255,255,.1);color:#fff}
+.code pre{margin:0;padding:13px 15px;overflow-x:auto;color:var(--code-text);font-size:13px;line-height:1.55;font-family:ui-monospace,"JetBrains Mono",Consolas,monospace}
+
+/* ---------- Media ---------- */
+.media-block{margin-top:8px;border-top:1px solid var(--border);padding-top:22px}
+.media-head{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.media-head h3{margin:0;font-size:14px;font-weight:700;display:flex;align-items:center;gap:7px}
+.media-head h3 .count{font-size:10.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:99px}
+.media-head .sp{flex:1}
+.media-sub{margin:5px 0 0;font-size:11.5px;color:var(--muted);line-height:1.5;width:100%}
+.media-add{display:inline-flex;align-items:center;gap:6px;padding:7px 11px;border-radius:9px;border:1px solid var(--border);background:var(--panel);font-size:12px;font-weight:600;color:var(--text);transition:.12s}
+.media-add:hover{background:var(--hover);border-color:color-mix(in srgb,var(--accent) 35%,var(--border));color:var(--accent)}
+.media-add svg{width:14px;height:14px}
+.media-collapse{width:29px;height:29px;border-radius:8px;display:inline-grid;place-items:center;color:var(--muted);border:1px solid transparent;transition:.12s}
+.media-collapse:hover{background:var(--hover);color:var(--text);border-color:var(--border)}
+.media-collapse svg{width:16px;height:16px;transition:transform .18s}
+.media-block.collapsed .media-collapse svg{transform:rotate(-90deg)}
+.media-block.collapsed .media-sub,
+.media-block.collapsed .media-grid,
+.media-block.collapsed .media-empty{display:none}
+.media-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px;margin-top:13px}
+.media-card{border:1px solid var(--border);border-radius:12px;background:var(--panel);overflow:hidden;display:flex;flex-direction:column;position:relative;min-width:0;box-shadow:0 2px 8px rgba(40,20,90,.04)}
+.media-card.missing{border-style:dashed;background:color-mix(in srgb,var(--gold) 4%,var(--panel))}
+.media-preview{height:108px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 9%,var(--bg)),var(--bg));display:grid;place-items:center;cursor:pointer;position:relative;overflow:hidden}
+.media-preview img{width:100%;height:100%;object-fit:cover;display:block}
+.media-preview video{width:100%;height:100%;object-fit:cover;background:#000}
+.media-preview .micon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent)}
+.media-preview .micon svg{width:21px;height:21px}
+.media-preview .play{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,5,30,.24);color:#fff}
+.media-preview .play svg{width:26px;height:26px;fill:currentColor;stroke:none;opacity:.92}
+.media-source{position:absolute;left:6px;top:6px;padding:1px 6px;border-radius:99px;background:rgba(10,5,30,.55);color:#fff;font-size:9px;font-weight:650;letter-spacing:.3px;backdrop-filter:blur(4px)}
+.media-source.manual{background:color-mix(in srgb,var(--accent) 82%,#000)}
+.media-info{padding:7px 9px 3px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.media-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-meta{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.media-tools{display:flex;align-items:center;gap:1px;padding:2px 5px 5px;flex-wrap:wrap}
+.media-tools button{width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:var(--muted)}
+.media-tools button:hover{background:var(--hover);color:var(--text)}
+.media-tools button.danger:hover{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger)}
+.media-tools button svg{width:13px;height:13px}
+.media-tools .repair{width:auto;padding:0 7px;gap:4px;font-size:10.5px;font-weight:600;color:var(--gold);border:1px solid color-mix(in srgb,var(--gold) 30%,transparent)}
+.media-empty{border:2px dashed var(--border);border-radius:13px;padding:24px 16px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6;margin-top:13px;cursor:pointer;transition:.15s}
+.media-empty:hover,.media-empty.over{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.media-empty svg{width:26px;height:26px;margin-bottom:6px;opacity:.7}
+
+/* ---------- Welcome ---------- */
+.drop{max-width:540px;width:100%;text-align:center;padding:44px 32px;border:2px dashed var(--border);border-radius:26px;background:var(--panel);box-shadow:var(--shadow);transition:.2s}
+.drop.over,body.dragging .drop{border-color:var(--accent);background:var(--accent-soft);transform:scale(1.015)}
+.drop .logo{width:62px;height:62px;border-radius:19px;margin:0 auto 16px}
+.drop .logo svg{width:31px;height:31px}
+.drop h2{margin:0 0 7px;font-size:21px}
+.drop p{margin:0 auto 18px;color:var(--muted);line-height:1.6;font-size:13.5px;max-width:410px}
+.drop .btn-primary{display:inline-flex;padding:11px 20px}
+.drop small{display:block;margin-top:12px;font-size:11px;color:var(--muted)}
+.feature-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 0 20px}
+.feature-chips span{font-size:10.5px;font-weight:600;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:4px 9px;border-radius:99px}
+
+/* ---------- Overlays / modals ---------- */
+#dropOverlay{position:fixed;inset:0;background:color-mix(in srgb,var(--accent) 13%,transparent);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:80;pointer-events:none}
+body.dragging #dropOverlay{display:flex}
+#dropOverlay .drop-card{display:flex;flex-direction:column;align-items:center;gap:5px;padding:30px 44px;border:2px dashed var(--accent);border-radius:22px;background:var(--panel);box-shadow:var(--shadow);text-align:center}
+#dropOverlay .drop-card svg{width:34px;height:34px;color:var(--accent);margin-bottom:5px}
+#dropOverlay .drop-card b{font-size:16px}
+#dropOverlay .drop-card span{font-size:12px;color:var(--muted)}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(18px);background:var(--text);color:var(--bg);padding:10px 17px;border-radius:11px;font-size:12.5px;opacity:0;pointer-events:none;transition:.22s;z-index:200;max-width:min(90vw,520px);text-align:center;box-shadow:var(--shadow)}
+#toast.show{opacity:1;transform:translateX(-50%)}
+#scrim{display:none}
+#popover{position:fixed;z-index:130;min-width:212px;max-width:280px;background:var(--panel);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 44px rgba(20,10,50,.22);padding:5px;animation:pop .12s ease}
+@keyframes pop{from{opacity:0;transform:scale(.97) translateY(-3px)}to{opacity:1;transform:none}}
+.pop-item{display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;border-radius:8px;font-size:12.5px;text-align:left;color:var(--text)}
+.pop-item:hover{background:var(--hover)}
+.pop-item svg{width:15px;height:15px;color:var(--muted)}
+.pop-item.danger{color:var(--danger)}
+.pop-item.danger svg{color:var(--danger)}
+.pop-item.checked{color:var(--accent);font-weight:600}
+.pop-sep{height:1px;background:var(--border);margin:4px 5px}
+.overlay{position:fixed;inset:0;z-index:120;background:var(--scrim);backdrop-filter:blur(4px);display:grid;place-items:center;padding:18px;animation:fade .15s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{width:min(560px,100%);max-height:min(88vh,860px);background:var(--panel);border:1px solid var(--border);border-radius:19px;box-shadow:0 24px 80px rgba(10,5,30,.3);display:flex;flex-direction:column;overflow:hidden;animation:pop .16s ease}
+.modal.wide{width:min(920px,100%)}
+.modal-head{display:flex;align-items:center;gap:9px;padding:14px 17px;border-bottom:1px solid var(--border);flex:none}
+.modal-head h3{margin:0;font-size:14.5px;font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-head .icon-btn{width:30px;height:30px}
+.modal-body{padding:17px;overflow:auto;min-height:0;font-size:13px;line-height:1.6}
+.modal-foot{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding:12px 17px;border-top:1px solid var(--border);flex-wrap:wrap;flex:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 13px;border-radius:9px;font-size:12.5px;font-weight:600;border:1px solid var(--border);background:var(--panel);color:var(--text);transition:.12s}
+.btn:hover{background:var(--hover)}
+.btn svg{width:14px;height:14px}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(109,74,255,.28)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.danger{background:var(--danger);color:#fff;border-color:transparent}
+.btn.danger:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.ghost:hover{background:var(--hover)}
+.modal .field{margin-bottom:13px}
+.modal .field:last-child{margin-bottom:0}
+.modal .field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px}
+.modal input[type=text],.modal textarea,.modal select{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg);outline:none;font-size:13px;color:var(--text)}
+.modal input[type=text]:focus,.modal textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.modal textarea{min-height:180px;resize:vertical;line-height:1.6}
+.modal textarea.short{min-height:88px}
+.note-status{font-size:11px;color:var(--muted);min-height:16px;margin-top:5px}
+.color-row{display:flex;gap:7px;flex-wrap:wrap}
+.color-swatch{width:25px;height:25px;border-radius:50%;border:2px solid transparent;background:var(--sc,var(--accent));box-shadow:inset 0 0 0 2px var(--panel);transition:.12s}
+.color-swatch:hover{transform:scale(1.08)}
+.color-swatch.sel{border-color:var(--text);transform:scale(1.08)}
+.check-list{display:flex;flex-direction:column;gap:4px;max-height:280px;overflow:auto;margin-bottom:10px}
+.check-row{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:9px;border:1px solid var(--border);cursor:pointer;background:var(--bg)}
+.check-row:hover{background:var(--hover)}
+.check-row input{accent-color:var(--accent);width:15px;height:15px;flex:none}
+.check-row .dot{width:8px;height:8px;border-radius:50%;background:var(--fc,var(--accent));flex:none}
+.check-row .nm{flex:1;min-width:0;font-size:12.5px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.check-row .nt{color:var(--gold);display:grid;place-items:center}
+.check-row .nt svg{width:12px;height:12px}
+.inline-create{display:flex;gap:6px;margin-top:4px}
+.inline-create input{flex:1;min-width:0}
+.confirm-text{margin:0;color:var(--muted);font-size:13px;line-height:1.65}
+.confirm-text b{color:var(--text)}
+.help-list{display:flex;flex-direction:column;gap:9px}
+.help-list div{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.help-list kbd{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;background:var(--bg);border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:2px 6px;color:var(--text);min-width:24px;text-align:center}
+.help-list span{color:var(--text)}
+.media-preview-box{display:grid;place-items:center;min-height:180px;max-height:66vh;background:var(--code-bg);border-radius:12px;overflow:auto;padding:8px}
+.media-preview-box img,.media-preview-box video{max-width:100%;max-height:64vh;border-radius:8px;display:block}
+.media-preview-box audio{width:100%;max-width:520px}
+.media-preview-box iframe{width:100%;height:62vh;border:0;border-radius:8px;background:#fff}
+.media-preview-box .big-file{display:flex;flex-direction:column;align-items:center;gap:8px;color:#c9c3e8;padding:38px 20px;text-align:center}
+.media-preview-box .big-file svg{width:46px;height:46px;color:#a894ff}
+.media-preview-box .big-file small{font-size:11px;opacity:.7}
+.lightbox-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px}
+.lightbox-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--muted)}
+
+/* ---------- Search marks ---------- */
+mark.find-hit{background:#ffe066;color:#1a1200;border-radius:2px;padding:0 1px;box-shadow:0 0 0 1px rgba(0,0,0,.04)}
+mark.find-hit.current{background:#ff9f43;outline:2px solid var(--accent);outline-offset:1px}
+mark{background:#ffd95a;color:#000;border-radius:3px;padding:0 2px}
+
+/* ---------- Responsive ---------- */
+@media (max-width:980px){
+  #sidebar{position:fixed;inset:0 auto 0 0;transform:translateX(-100%);width:min(90vw,350px)!important;box-shadow:0 0 60px rgba(10,5,30,.25)}
+  body.menu #sidebar{transform:none}
+  #menuBtn{display:inline-grid}
+  #collapseBtn,#sidebarResizer,#expandBtn{display:none!important}
+  body.sidebar-collapsed #sidebar{width:min(90vw,350px)!important;min-width:0!important;border-right:1px solid var(--border);overflow:visible;opacity:1;pointer-events:auto;transform:translateX(-100%)}
+  body.menu.sidebar-collapsed #sidebar{transform:none}
+  body.menu #scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:10}
+  header.top{padding:0 8px 0 10px}
+  .thread{padding:20px 14px 55px}
+  .avatar{display:none}
+  .body{max-width:100%}
+  .msg.user .body{max-width:92%}
+  .msg-act{opacity:1}
+}
+@media (hover:none){
+  .msg-act{opacity:1}
+}
+@media (max-width:640px){
+  .top-actions .icon-btn{width:31px;height:31px}
+  .top-actions{gap:0}
+  header.top h2{font-size:13.5px}
+  header.top .meta{font-size:10.5px}
+  .thread{gap:19px;padding:16px 11px 46px}
+  .bubble{padding:11px 13px;font-size:14px}
+  .media-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .media-preview{height:88px}
+  .drop{padding:32px 18px;border-radius:20px}
+  .drop h2{font-size:19px}
+  .feature-chips{margin-bottom:16px}
+  .modal-foot{justify-content:stretch}
+  .modal-foot .btn{flex:1}
+  .find-count{min-width:40px;font-size:10px}
+  #findbar{padding:6px 8px;gap:4px}
+  .check-list{max-height:220px}
+  .msg-act{opacity:1}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div id="scrim"></div>
+<div id="dropOverlay"><div class="drop-card"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 20h16"/></svg><b>Dosyaları bırak</b><span>JSON sohbetleri veya medya dosyaları</span></div></div>
+
+<aside id="sidebar">
+  <div class="brand">
+    <div class="logo"><svg viewBox="0 0 24 24"><path d="M4 19V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4z"/><path d="M9 9h6M9 12h4"/></svg></div>
+    <div class="brand-text"><h1>Sohbet Okuyucu</h1><small>Lumo dışa aktarımları</small></div>
+    <button class="icon-btn" id="collapseBtn" title="Sohbet panelini daralt"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 9l-3 3 3 3"/></svg></button>
+    <button class="icon-btn" id="themeBtn" title="Tema değiştir"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  </div>
+  <div class="side-actions">
+    <button class="btn-primary" id="addBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>JSON dosyası ekle</button>
+    <div class="btn-row">
+      <button class="btn-soft" id="newFolderBtn"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 13.5h5"/></svg>Yeni klasör</button>
+      <button class="icon-btn bordered" id="helpBtn" title="Kısayollar ve yardım"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-.9.7-1.5 1.2-1.5 2.5"/><path d="M12 17h.01"/></svg></button>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" placeholder="Tüm sohbetlerde ara… (Ctrl+K)" autocomplete="off" spellcheck="false">
+      <button class="search-clear hidden" id="qClear" title="Aramayı temizle"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+  </div>
+  <div class="side-scroll">
+    <div class="sort-row"><span>Sırala</span>
+      <select id="sortSel" title="Sohbetleri sırala">
+        <option value="updated-desc">Son güncelleme (yeni → eski)</option>
+        <option value="updated-asc">Son güncelleme (eski → yeni)</option>
+        <option value="created-desc">Oluşturulma (yeni → eski)</option>
+        <option value="created-asc">Oluşturulma (eski → yeni)</option>
+        <option value="title-asc">Başlık (A → Z)</option>
+        <option value="title-desc">Başlık (Z → A)</option>
+        <option value="messages-desc">Mesaj sayısı (çok → az)</option>
+        <option value="messages-asc">Mesaj sayısı (az → çok)</option>
+        <option value="custom">Özel sıra (sürükle-bırak)</option>
+      </select>
+    </div>
+    <div id="favWrap"></div>
+    <div id="folderWrap"></div>
+    <div id="listWrap"></div>
+  </div>
+  <div class="side-foot"><span class="foot-dot"></span><span>Veriler yalnızca bu tarayıcıda</span><span class="sp"></span><span id="storageInfo"></span></div>
+  <div id="sidebarResizer" title="Genişliği ayarlamak için sürükle"></div>
+</aside>
+
+<section id="main">
+  <header class="top">
+    <button class="icon-btn" id="expandBtn" title="Sohbet panelini aç"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M13 9l3 3-3 3"/></svg></button>
+    <button class="icon-btn" id="menuBtn" title="Menü"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    <div class="title"><h2 id="ttl">Sohbet seçin</h2><div class="meta" id="meta"></div></div>
+    <div class="top-actions">
+      <button class="icon-btn" id="favBtn" title="Favorilere ekle"><svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6-5.4-2.8L6.6 19.7l1-6-4.4-4.3 6.1-.9z"/></svg></button>
+      <button class="icon-btn" id="noteBtn" title="Sohbet notu"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></button>
+      <button class="icon-btn" id="mediaBtn" title="Bu sohbetteki medyalar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 20"/></svg><span class="badge hidden" id="mediaBadge">0</span></button>
+      <button class="icon-btn" id="findBtn" title="Bu sohbette ara (Ctrl+F)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <button class="icon-btn" id="exportBtn" title="Dışa aktar"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg></button>
+    </div>
+  </header>
+  <div id="findbar" class="hidden">
+    <input id="findInput" placeholder="Bu sohbette ara…" autocomplete="off">
+    <span class="find-count" id="findCount">0/0</span>
+    <button class="icon-btn" id="findPrev" title="Önceki eşleşme"><svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg></button>
+    <button class="icon-btn" id="findNext" title="Sonraki eşleşme"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+    <button class="icon-btn" id="findClose" title="Kapat (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div id="chatArea">
+    <div id="welcome">
+      <div class="drop" id="drop">
+        <div class="logo"><svg viewBox="0 0 24 24"><path d="M4 19V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4z"/><path d="M9 9h6M9 12h4"/></svg></div>
+        <h2>Geçmiş sohbetlerini oku</h2>
+        <p>Lumo'dan dışa aktardığın <b>.json</b> dosyalarını sürükle bırak ya da seç. Sohbetler, notlar, klasörler ve eklediğin medyalar tarayıcıda saklanır.</p>
+        <div class="feature-chips"><span>Favoriler</span><span>Klasörler</span><span>Notlar</span><span>Medya</span><span>Arama</span><span>Sürüm geçmişi</span></div>
+        <button class="btn-primary" id="addBtn2"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 20h16"/></svg>Dosya seç</button>
+        <small>veya JSON dosyalarını buraya sürükle</small>
+      </div>
+    </div>
+    <div id="chat" class="hidden"><div class="thread" id="thread"></div></div>
+  </div>
+</section>
+
+<input type="file" id="file" accept=".json,application/json" multiple hidden>
+<input type="file" id="mediaFile" multiple hidden>
+<input type="file" id="replaceMediaFile" hidden>
+<div id="popover" class="hidden"></div>
+<div id="modalRoot"></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- sabitler ---------- */
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const APP_VERSION=4;
+const DB_NAME="lumo-reader-db", DB_STORE="state", DB_KEY="app";
+const FALLBACK_KEY="lumo-reader-state-v4";
+const OLD_LS="lumo-reader-v1";
+const SORT_VALUES=["updated-desc","updated-asc","created-desc","created-asc","title-asc","title-desc","messages-desc","messages-asc","custom"];
+const FOLDER_COLORS=["#6d4aff","#a855f7","#ec4899","#f59e0b","#10b981","#06b6d4","#ef4444","#8b5cf6"];
+
+const I={
+  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  json:'<svg viewBox="0 0 24 24"><path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2M16 3h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2M14 8l-2 4 2 4M10 8l2 4-2 4"/></svg>',
+  folder:'<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  star:'<svg viewBox="0 0 24 24"><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6-5.4-2.8L6.6 19.7l1-6-4.4-4.3 6.1-.9z"/></svg>',
+  note:'<svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>',
+  image:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="m21 15-5-5L5 20"/></svg>',
+  more:'<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
+  close:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  chevron:'<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
+  download:'<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14"/></svg>',
+  copy:'<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+  menu:'<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>',
+  moon:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  help:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-.9.7-1.5 1.2-1.5 2.5"/><path d="M12 17h.01"/></svg>',
+  grip:'<svg viewBox="0 0 24 24"><path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01"/></svg>',
+  play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+  up:'<svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>',
+  down:'<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>',
+  rotate:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>',
+  external:'<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg>',
+  file:'<svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/></svg>',
+  audio:'<svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg>',
+  video:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3z"/></svg>',
+  edit:'<svg viewBox="0 0 24 24"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m13.5 6.5 4 4"/></svg>',
+  panel:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>',
+  cat:'<svg viewBox="0 0 24 24"><path d="M5 10 4 4l5 3h6l5-3-1 6v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4z"/><path d="M9.5 13h.01M14.5 13h.01M10 16c1.2 1 2.8 1 4 0"/></svg>'
+};
+const icon=n=>I[n]||"";
+
+/* ---------- yardımcılar ---------- */
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const uid=p=>p+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const escapeRe=s=>String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+function fold(s){
+  return String(s==null?"":s).toLocaleLowerCase("tr-TR")
+    .replace(/ı/g,"i").replace(/ş/g,"s").replace(/ğ/g,"g").replace(/ü/g,"u").replace(/ö/g,"o").replace(/ç/g,"c")
+    .replace(/â/g,"a").replace(/î/g,"i").replace(/û/g,"u").replace(/İ/g,"i");
+}
+function toMs(t){
+  if(t==null||t==="")return 0;
+  if(typeof t==="string"){
+    const s=t.trim();
+    if(/^\d+(\.\d+)?$/.test(s)) t=Number(s);
+    else { const d=Date.parse(s); return Number.isFinite(d)?d:0; }
+  }
+  if(typeof t!=="number"||!Number.isFinite(t)||t<=0)return 0;
+  return Math.round(t>1e11?t:t*1000);
+}
+function fmt(ms){return ms?new Date(ms).toLocaleString("tr-TR",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"}):""}
+function fmtShort(ms){return ms?new Date(ms).toLocaleDateString("tr-TR",{day:"numeric",month:"short",year:"numeric"}):"Tarih yok"}
+function groupName(ms){
+  if(!ms)return"Tarih yok";
+  const d=new Date(ms),n=new Date();
+  const day=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime();
+  const diff=Math.round((day(n)-day(d))/864e5);
+  if(diff<=0)return"Bugün"; if(diff===1)return"Dün"; if(diff<=7)return"Son 7 gün"; if(diff<=30)return"Son 30 gün";
+  return d.toLocaleDateString("tr-TR",{month:"long",year:"numeric"});
+}
+function cleanTitle(s){
+  let t=String(s==null?"":s).replace(/\r/g,"").trim();
+  if(!t)return"";
+  t=t.split("\n").find(l=>l.trim())||t;
+  t=t.replace(/^#+\s*/,"").replace(/[*_`>#]/g,"").replace(/\s+/g," ").trim();
+  return t.length>78?t.slice(0,77)+"…":t;
+}
+function modelName(slug){return slug?String(slug).replace(/\s*\(.*?\)\s*/g,"").trim():""}
+function normRole(r){r=String(r||"").toLowerCase();if(/user|human|me/.test(r))return"user";if(/assistant|ai|model|lumo|bot/.test(r))return"assistant";return""}
+function validColor(c){return /^#[0-9a-f]{6}$/i.test(String(c||""))?c:FOLDER_COLORS[0]}
+function normMime(v){const s=String(v||"").trim().toLowerCase();return s.includes("/")?s:""}
+function mimeFromName(name){
+  const e=(String(name||"").split(".").pop()||"").toLowerCase();
+  const map={png:"image/png",jpg:"image/jpeg",jpeg:"image/jpeg",gif:"image/gif",webp:"image/webp",svg:"image/svg+xml",bmp:"image/bmp",avif:"image/avif",mp4:"video/mp4",webm:"video/webm",mov:"video/quicktime",mkv:"video/x-matroska",mp3:"audio/mpeg",wav:"audio/wav",ogg:"audio/ogg",m4a:"audio/mp4",flac:"audio/flac",pdf:"application/pdf",txt:"text/plain",md:"text/markdown",json:"application/json",csv:"text/csv",zip:"application/zip"};
+  return map[e]||"";
+}
+function kindFromMime(mime,name){
+  const m=String(mime||"").toLowerCase(), n=String(name||"").toLowerCase();
+  if(m.startsWith("image/")||/\.(png|jpe?g|gif|webp|svg|bmp|avif)$/.test(n))return"image";
+  if(m.startsWith("video/")||/\.(mp4|webm|mov|mkv|avi)$/.test(n))return"video";
+  if(m.startsWith("audio/")||/\.(mp3|wav|ogg|m4a|flac|aac)$/.test(n))return"audio";
+  return"file";
+}
+function sizeLabel(bytes){
+  const b=Number(bytes)||0; if(!b)return"";
+  const u=["B","KB","MB","GB"]; let i=0,v=b;
+  while(v>=1024&&i<u.length-1){v/=1024;i++}
+  return (v>=10||i===0?Math.round(v):v.toFixed(1))+" "+u[i];
+}
+function mediaKey(m){
+  if(!m)return"";
+  if(m.asset)return"a:"+m.asset;
+  if(m.url)return"u:"+m.url;
+  if(m.dataUrl)return"d:"+m.dataUrl;
+  return"n:"+(m.name||"")+"|"+(m.size||0);
+}
+function snippetAround(text,qf,pad=36){
+  const f=fold(text); const i=qf?f.indexOf(qf):-1;
+  if(i<0)return String(text||"").replace(/\s+/g," ").slice(0,90);
+  const s=Math.max(0,i-pad), e=Math.min(text.length,i+qf.length+pad);
+  return (s?"…":"")+String(text).slice(s,e).replace(/\s+/g," ")+(e<text.length?"…":"");
+}
+function snippetMarked(text,qf){
+  const f=fold(text); const i=qf?f.indexOf(qf):-1;
+  if(i<0)return esc(snippetAround(text,qf));
+  const s=Math.max(0,i-36), e=Math.min(text.length,i+qf.length+36);
+  const pre=String(text).slice(s,i), mid=String(text).slice(i,i+qf.length), post=String(text).slice(i+qf.length,e);
+  return (s?"…":"")+esc(pre.replace(/\s+/g," "))+"<mark>"+esc(mid)+"</mark>"+esc(post.replace(/\s+/g," "))+(e<text.length?"…":"");
+}
+function toast(message){
+  const t=$("#toast");if(!t)return;
+  t.textContent=message;t.classList.add("show");
+  clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2600);
+}
+function blobToDataURL(blob){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result||""));r.onerror=()=>rej(r.error||new Error("okunamadı"));r.readAsDataURL(blob)});
+}
+
+/* ---------- durum ---------- */
+function blankState(){return{version:APP_VERSION,chats:[],folders:[],order:[],activeId:null,ui:{sort:"updated-desc",filter:{type:"all"},q:""},settings:{},savedAt:0}}
+let state=blankState();
+
+/* ---------- IndexedDB / kalıcılık ---------- */
+let dbPromise=null;
+function getDB(){
+  if(dbPromise)return dbPromise;
+  dbPromise=new Promise((res,rej)=>{
+    try{
+      if(!("indexedDB" in window))throw new Error("IndexedDB yok");
+      const r=indexedDB.open(DB_NAME,1);
+      r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(DB_STORE))d.createObjectStore(DB_STORE)};
+      r.onsuccess=()=>res(r.result);
+      r.onerror=()=>rej(r.error||new Error("IndexedDB hatası"));
+    }catch(e){rej(e)}
+  });
+  return dbPromise;
+}
+async function dbGet(){
+  const d=await getDB();
+  return new Promise((res,rej)=>{const tx=d.transaction(DB_STORE,"readonly");const r=tx.objectStore(DB_STORE).get(DB_KEY);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error)});
+}
+async function dbPut(v){
+  const d=await getDB();
+  return new Promise((res,rej)=>{const tx=d.transaction(DB_STORE,"readwrite");tx.objectStore(DB_STORE).put(v,DB_KEY);tx.oncomplete=()=>res(true);tx.onerror=()=>rej(tx.error)});
+}
+let saveTimer=null, saveChain=Promise.resolve();
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveNow(),260)}
+function saveNow(){
+  clearTimeout(saveTimer);saveTimer=null;state.savedAt=Date.now();
+  saveChain=saveChain.then(async()=>{
+    try{await dbPut(state)}
+    catch(e){try{await writeFallback()}catch(e2){console.warn("Kayıt yapılamadı",e2)}}
+  }).catch(e=>console.warn(e));
+  return saveChain;
+}
+async function writeFallback(){
+  const chats=await Promise.all(state.chats.map(async c=>({
+    ...c,
+    media:await Promise.all((c.media||[]).map(async m=>{
+      const o={...m};
+      if(o.blob instanceof Blob){try{o.dataUrl=await blobToDataURL(o.blob)}catch(e){}}
+      delete o.blob;return o;
+    }))
+  })));
+  localStorage.setItem(FALLBACK_KEY,JSON.stringify({...state,chats}));
+}
+async function loadState(){
+  let raw=null;
+  try{raw=await dbGet()}catch(e){}
+  if(!raw){
+    try{const s=localStorage.getItem(FALLBACK_KEY);if(s)raw=JSON.parse(s)}catch(e){}
+  }
+  if(!raw){
+    try{const s=localStorage.getItem(OLD_LS);if(s){const a=JSON.parse(s);if(Array.isArray(a))raw={chats:a}}}catch(e){}
+  }
+  return normalizeState(raw||{});
+}
+
+/* ---------- yükleme / göç ---------- */
+function normalizeState(raw){
+  const s=Object.assign(blankState(),raw||{});
+  s.chats=Array.isArray(s.chats)?s.chats:[];
+  s.folders=Array.isArray(s.folders)?s.folders:[];
+  s.chats=s.chats.map(normalizeLoadedChat).filter(Boolean);
+  s.folders=s.folders.map(f=>({id:String(f.id||uid("folder")),name:String(f.name||"Klasör"),color:validColor(f.color),note:typeof f.note==="string"?f.note:"",created:toMs(f.created)||Date.now()})).filter(f=>f.id);
+  const folderIds=new Set(s.folders.map(f=>f.id));
+  s.chats.forEach(c=>{c.folderIds=(c.folderIds||[]).filter(id=>folderIds.has(id))});
+  const ids=s.chats.map(c=>c.id);
+  const seen=new Set();
+  s.order=(Array.isArray(s.order)?s.order:[]).filter(id=>ids.includes(id)&&!seen.has(id)&&(seen.add(id),true));
+  for(const id of ids)if(!s.order.includes(id))s.order.push(id);
+  if(!s.ui||typeof s.ui!=="object")s.ui={sort:"updated-desc",filter:{type:"all"},q:""};
+  if(!SORT_VALUES.includes(s.ui.sort))s.ui.sort="updated-desc";
+  const f=s.ui.filter;
+  if(!f||!["all","favorites","folder","unfiled"].includes(f.type))s.ui.filter={type:"all"};
+  if(s.ui.filter.type==="folder"&&!folderIds.has(s.ui.filter.id))s.ui.filter={type:"all"};
+  s.ui.q=typeof s.ui.q==="string"?s.ui.q:"";
+  if(s.activeId&&!ids.includes(s.activeId))s.activeId=null;
+  s.settings=s.settings&&typeof s.settings==="object"?s.settings:{};
+  s.version=APP_VERSION;
+  return s;
+}
+function normalizeLoadedMedia(m){
+  if(!m||typeof m!=="object")return null;
+  const name=String(m.name||"Medya"), mime=String(m.mime||"");
+  const out={
+    id:String(m.id||uid("media")),name,mime,size:Number(m.size)||0,
+    kind:m.kind||kindFromMime(mime,name),url:String(m.url||""),dataUrl:String(m.dataUrl||""),
+    asset:String(m.asset||""),source:m.source==="manual"?"manual":"import",
+    missing:!!m.missing,local:!!m.local,messageId:m.messageId||null,key:String(m.key||""),
+    blob:(typeof Blob!=="undefined"&&m.blob instanceof Blob)?m.blob:null
+  };
+  if(out.blob||out.dataUrl||out.url)out.missing=false;
+  out.key=out.key||mediaKey(out);
+  return out;
+}
+function normalizeHistoryEntry(h){
+  if(!h||typeof h!=="object")return{text:String(h||""),time:0,label:"Önceki sürüm",att:[]};
+  return{
+    text:String(h.text||""),time:toMs(h.time)||0,
+    label:String(h.label||"Önceki sürüm"),
+    att:Array.isArray(h.att)?h.att.map(String):[]
+  };
+}
+function normalizeLoadedChat(c){
+  if(!c||typeof c!=="object")return null;
+  const out={
+    ...c,id:String(c.id||c.conversation_id||uid("chat")),title:String(c.title||"Başlıksız sohbet"),
+    created:toMs(c.created)||0,updated:toMs(c.updated)||0,favorite:!!c.favorite,
+    folderIds:Array.isArray(c.folderIds)?c.folderIds.map(String):[],
+    note:typeof c.note==="string"?c.note:"",scroll:Number(c.scroll)||0,
+    source:c.source||null,media:Array.isArray(c.media)?c.media.map(normalizeLoadedMedia).filter(Boolean):[],
+    msgs:Array.isArray(c.msgs)?c.msgs.map(m=>({...m,att:Array.isArray(m.att)?m.att:[],history:Array.isArray(m.history)?m.history.map(normalizeHistoryEntry):[]})):[]
+  };
+  if(!out.media.length&&out.msgs.some(m=>m.att&&m.att.length))out.msgs.forEach(m=>{m.att=[]});
+  if(!c.tree||typeof c.tree!=="object"||!Object.keys(c.tree).length){
+    const t=treeFromMessages(out.msgs);out.tree=t.tree;out.currentNode=t.currentNode;
+  }else{
+    out.tree=c.tree;
+    for(const [k,v] of Object.entries(out.tree)){
+      if(!v||typeof v!=="object"){out.tree[k]={id:k,p:null,m:null};continue}
+      v.id=v.id||k;v.p=v.p==null?null:v.p;
+      if(v.m)v.m={role:v.m.role==="assistant"?"assistant":"user",text:String(v.m.text||""),time:toMs(v.m.time)||0,model:String(v.m.model||""),att:Array.isArray(v.m.att)?v.m.att:[],history:Array.isArray(v.m.history)?v.m.history.map(normalizeHistoryEntry):[]};
+    }
+    out.currentNode=c.currentNode&&out.tree[c.currentNode]?c.currentNode:findBestLeaf(out.tree);
+  }
+  if(!out.currentNode)out.currentNode=findBestLeaf(out.tree);
+  syncMsgs(out);
+  if(!out.created)out.created=out.msgs[0]?.time||0;
+  if(!out.updated)out.updated=out.msgs[out.msgs.length-1]?.time||out.created;
+  return out;
+}
+function treeFromMessages(msgs){
+  const tree={};let parent=null,last=null;
+  (msgs||[]).forEach(m=>{
+    const id=uid("node");
+    tree[id]={id,p:parent,m:{role:m.role==="assistant"?"assistant":"user",text:String(m.text||""),time:toMs(m.time)||0,model:String(m.model||""),att:Array.isArray(m.att)?m.att:[],history:Array.isArray(m.history)?m.history:[]}};
+    parent=id;last=id;
+  });
+  return{tree,currentNode:last};
+}
+function syncMsgs(chat){
+  const ids=pathTo(chat.tree,chat.currentNode);
+  chat.msgs=ids.map(id=>({...chat.tree[id].m,nodeId:id}));
+  if(!chat.msgs.length){
+    const best=findBestLeaf(chat.tree);
+    if(best){chat.currentNode=best;chat.msgs=pathTo(chat.tree,best).map(id=>({...chat.tree[id].m,nodeId:id}))}
+  }
+}
+function pathTo(tree,id){
+  const path=[];const seen=new Set();let cur=id;
+  while(cur&&tree[cur]&&!seen.has(cur)){seen.add(cur);if(tree[cur].m)path.push(cur);cur=tree[cur].p}
+  return path.reverse();
+}
+function findBestLeaf(tree){
+  const entries=Object.entries(tree||{});
+  const parents=new Set(entries.map(([,n])=>n.p).filter(Boolean));
+  let leaves=entries.filter(([id,n])=>n.m&&!parents.has(id));
+  if(!leaves.length)leaves=entries.filter(([,n])=>n.m);
+  leaves.sort((a,b)=>{
+    const d=(b[1].m.time||0)-(a[1].m.time||0);if(d)return d;
+    return entries.indexOf(b)-entries.indexOf(a);
+  });
+  return leaves[0]?.[0]||null;
+}
+function latestLeafFrom(tree,id){
+  const entries=Object.entries(tree||{});let cur=id;const seen=new Set();
+  while(cur&&!seen.has(cur)){
+    seen.add(cur);
+    const kids=entries.filter(([cid,n])=>n.p===cur&&n.m);
+    if(!kids.length)break;
+    kids.sort((a,b)=>(b[1].m.time||0)-(a[1].m.time||0));
+    cur=kids[0][0];
+  }
+  return cur||id;
+}
+
+/* ---------- JSON ayrıştırma ---------- */
+function partText(p){
+  if(p==null)return"";
+  if(typeof p==="string")return p;
+  if(typeof p==="number"||typeof p==="boolean")return String(p);
+  if(Array.isArray(p))return p.map(partText).join("\n");
+  if(typeof p!=="object")return"";
+  if(typeof p.text==="string")return p.text;
+  if(typeof p.value==="string")return p.value;
+  if(typeof p.content==="string")return p.content;
+  if(Array.isArray(p.parts))return p.parts.map(partText).join("\n");
+  if(p.content&&typeof p.content==="object")return partText(p.content);
+  return"";
+}
+function contentText(c){
+  if(c==null)return"";
+  if(typeof c==="string")return c;
+  if(Array.isArray(c))return c.map(partText).join("\n");
+  if(typeof c==="object"){
+    if(Array.isArray(c.parts))return c.parts.map(partText).join("\n");
+    if(typeof c.text==="string")return c.text;
+    if(typeof c.content==="string")return c.content;
+    if(Array.isArray(c.content))return c.content.map(partText).join("\n");
+    if(c.content&&typeof c.content==="object")return contentText(c.content);
+    if(typeof c.value==="string")return c.value;
+  }
+  return"";
+}
+function looksAttachment(o){
+  if(!o||typeof o!=="object"||Array.isArray(o))return false;
+  if(o.asset_pointer||o.file_id||o.fileId||o.asset_id||o.assetId||o.image_url||o.audio_url||o.video_url||o.download_url)return true;
+  if(o.data&&typeof o.data==="object"&&(o.data.base64||o.data.data))return true;
+  if(typeof o.base64==="string"&&o.base64.length>16)return true;
+  const t=String(o.type||o.content_type||o.kind||"").toLowerCase();
+  if(/image|audio|video|file|attach|document|pdf/.test(t))return true;
+  if((o.mime_type||o.mimeType)&&(o.name||o.filename||o.url||o.data))return true;
+  if(o.url&&(o.name||o.filename||o.size||o.mime_type||o.mimeType))return true;
+  return false;
+}
+function pick(o,keys){
+  for(const k of keys){const v=o[k];if(v!=null&&v!=="")return v}
+  return"";
+}
+function normalizeAttachment(raw,ctx){
+  if(!raw||typeof raw!=="object"||Array.isArray(raw))return null;
+  const merged={};
+  for(const k of ["file","attachment","content","metadata"])if(raw[k]&&typeof raw[k]==="object"&&!Array.isArray(raw[k]))Object.assign(merged,raw[k]);
+  const o=Object.assign({},merged,raw);
+  let url="",dataUrl="",b64="",asset="",name="",mime="",size=0;
+  const img=o.image_url;
+  if(typeof img==="string")url=img;
+  else if(img&&typeof img==="object"&&typeof img.url==="string")url=img.url;
+  for(const k of ["url","uri","download_url","downloadUrl","file_url","fileUrl","src","href","audio_url","video_url"])if(!url&&typeof o[k]==="string")url=o[k];
+  const rd=o.data;
+  if(typeof rd==="string"){
+    if(/^data:/i.test(rd))dataUrl=rd;
+    else if(rd.length>24&&/^[A-Za-z0-9+/=\s]+$/.test(rd))b64=rd.replace(/\s+/g,"");
+  }else if(rd&&typeof rd==="object"){
+    if(typeof rd.url==="string")url=url||rd.url;
+    if(typeof rd.base64==="string")b64=rd.base64;
+    else if(typeof rd.data==="string")b64=rd.data;
+  }
+  if(!b64){
+    for(const k of ["base64","base64_data","data_base64"])if(typeof o[k]==="string"&&o[k]){if(/^data:/i.test(o[k]))dataUrl=o[k];else b64=o[k];break}
+  }
+  if(!url&&!dataUrl&&typeof o.content==="string"&&/^data:/i.test(o.content))dataUrl=o.content;
+  name=String(pick(o,["name","filename","file_name","fileName","title","display_name","alt_text","alt"])||"").trim();
+  if(!name&&o.metadata&&typeof o.metadata==="object")name=String(pick(o.metadata,["name","filename","file_name"])||"").trim();
+  asset=String(pick(o,["asset_pointer","file_id","fileId","asset_id","assetId"])||"").trim();
+  mime=normMime(pick(o,["mime_type","mimeType","media_type","mediaType","content_type","contentType","type"]));
+  if(!mime&&o.metadata&&typeof o.metadata==="object")mime=normMime(pick(o.metadata,["mime_type","mimeType","content_type"]));
+  size=Number(pick(o,["size","bytes","file_size","fileSize"]))||0;
+  if(url.startsWith("data:")){dataUrl=url;url=""}
+  if(!mime)mime=mimeFromName(name);
+  if(b64){if(!mime)mime="application/octet-stream";dataUrl="data:"+mime+";base64,"+b64}
+  if(!url&&!dataUrl&&!asset&&!name)return null;
+  const kind=kindFromMime(mime,name||asset);
+  if(!name){
+    if(url)name=decodeURIComponent((url.split("/").pop()||"").split("?")[0])||"Medya";
+    else if(asset)name="Lumo dosyası";
+    else name=kind==="image"?"Görsel":kind==="video"?"Video":kind==="audio"?"Ses":"Dosya";
+  }
+  return{id:uid("media"),name,mime:normMime(mime),size,kind,url,dataUrl,asset,source:"import",missing:!url&&!dataUrl,messageId:ctx&&ctx.messageId||null,key:""};
+}
+function collectAttachments(msg,node){
+  const out=[];const seen=new Set();
+  const add=v=>{
+    if(Array.isArray(v)){v.forEach(add);return}
+    if(!v||typeof v!=="object")return;
+    if(!looksAttachment(v))return;
+    const a=normalizeAttachment(v);if(!a)return;
+    const k=mediaKey(a);if(seen.has(k))return;
+    seen.add(k);a.key=k;out.push(a);
+  };
+  const addAny=v=>{
+    if(Array.isArray(v)){v.forEach(addAny);return}
+    if(!v||typeof v!=="object")return;
+    if(looksAttachment(v)){add(v);return}
+    for(const x of Object.values(v))if(x&&typeof x==="object")add(x);
+  };
+  if(msg){
+    [msg.attachments,msg.files,msg.images,msg.media,msg.metadata&&msg.metadata.attachments,msg.metadata&&msg.metadata.files,msg.metadata&&msg.metadata.images,msg.metadata&&msg.metadata.media].forEach(addAny);
+    const c=msg.content;
+    if(Array.isArray(c))c.forEach(add);
+    else if(c&&typeof c==="object"){
+      [c.attachments,c.files,c.images,c.media].forEach(addAny);
+      if(Array.isArray(c.parts))c.parts.forEach(p=>{if(p&&typeof p==="object"&&looksAttachment(p))add(p)});
+    }
+  }
+  if(node){[node.attachments,node.files].forEach(addAny)}
+  return out;
+}
+function collectConversationAttachments(raw){
+  const out=[];const seen=new Set();
+  const add=v=>{
+    if(Array.isArray(v)){v.forEach(add);return}
+    if(!v||typeof v!=="object")return;
+    if(looksAttachment(v)){
+      const a=normalizeAttachment(v);if(!a)return;
+      const k=mediaKey(a);if(seen.has(k))return;seen.add(k);a.key=k;out.push(a);return;
+    }
+    for(const x of Object.values(v))if(x&&typeof x==="object")add(x);
+  };
+  if(raw){[raw.attachments,raw.files,raw.media,raw.assets,raw.conversation&&raw.conversation.attachments].forEach(add)}
+  return out;
+}
+function collectInlineHistory(m,currentText){
+  if(!m||typeof m!=="object")return[];
+  const out=[];const seen=new Set([String(currentText||"").trim()]);
+  const pools=[];
+  [m,m.metadata].forEach(src=>{
+    if(!src||typeof src!=="object")return;
+    ["versions","revisions","edit_history","editHistory","history","previous_versions","previousVersions"].forEach(k=>{
+      if(Array.isArray(src[k]))pools.push(...src[k]);
+    });
+  });
+  for(const item of pools){
+    let text="",time=0;
+    if(typeof item==="string")text=item;
+    else if(item&&typeof item==="object"){
+      text=contentText(item.content!==undefined?item.content:(item.text!==undefined?item.text:item));
+      time=toMs(item.time||item.create_time||item.createTime||item.timestamp);
+    }
+    text=String(text||"").trim();
+    if(!text||seen.has(text))continue;
+    seen.add(text);out.push({text,time});
+  }
+  [m,m.metadata].forEach(src=>{
+    if(!src||typeof src!=="object")return;
+    for(const k of ["original_content","originalContent","previous_content","previousContent","original_text","previous_text"]){
+      const v=src[k];if(v==null)continue;
+      const text=String(contentText(v)||"").trim();
+      if(text&&!seen.has(text)){seen.add(text);out.push({text,time:0,label:"Önceki içerik"})}
+    }
+  });
+  return out.slice(-20);
+}
+function buildMessage(m,node,addMedia){
+  if(!m||typeof m!=="object")return null;
+  const role=normRole((m.author&&m.author.role)||m.role||m.sender||"");
+  if(!role)return null;
+  const atts=collectAttachments(m,node);
+  const text=String(contentText(m.content!==undefined?m.content:(m.text!==undefined?m.text:m.message))||"").trim();
+  if(!text&&!atts.length)return null;
+  const ids=[];
+  for(const a of atts){
+    const id=addMedia(a,m.id||(node&&node.id)||null);
+    if(id)ids.push(id);
+  }
+  const time=toMs(m.create_time||m.createTime||m.time||m.timestamp||(node&&node.create_time));
+  const model=modelName((m.metadata&&(m.metadata.model_slug||m.metadata.model))||m.model||m.model_name||"");
+  return{role,text,time,model,att:ids,history:collectInlineHistory(m,text)};
+}
+function buildChatFromRaw(raw,opts){
+  opts=opts||{};
+  const media=[],mediaIndex=new Map();
+  const addMedia=(m,messageId)=>{
+    if(!m)return null;
+    const key=mediaKey(m);
+    m.key=key;
+    if(mediaIndex.has(key))return mediaIndex.get(key).id;
+    m.id=m.id||uid("media");m.messageId=messageId||m.messageId||null;
+    media.push(m);mediaIndex.set(key,m);return m.id;
+  };
+  collectConversationAttachments(raw).forEach(m=>addMedia(m,null));
+  const tree={};let currentNode=null;
+  if(raw.mapping&&typeof raw.mapping==="object"){
+    for(const [key,node] of Object.entries(raw.mapping)){
+      if(!node||typeof node!=="object")continue;
+      const id=String(node.id||key);
+      const parent=node.parent!=null?String(node.parent):(node.message&&node.message.metadata&&node.message.metadata.parent_id)||null;
+      tree[id]={id,p:parent,m:null};
+    }
+    for(const [key,node] of Object.entries(raw.mapping)){
+      if(!node||tree[String(node.id||key)]==null)continue;
+      const id=String(node.id||key);
+      if(!node.message)continue;
+      const built=buildMessage(node.message,node,addMedia);
+      if(built)tree[id].m=built;
+    }
+    currentNode=raw.current_node||raw.currentNode||raw.current||null;
+    if(!currentNode||!tree[currentNode])currentNode=findBestLeaf(tree);
+  }else{
+    const arr=Array.isArray(raw.messages)?raw.messages:(Array.isArray(raw.message_list)?raw.message_list:(Array.isArray(raw.chat)?raw.chat:[]));
+    let parent=null;
+    for(const item of arr){
+      const m=item&&typeof item==="object"&&item.message?item.message:item;
+      const built=m&&typeof m==="object"?buildMessage(m,item||{},addMedia):null;
+      const id=String((item&&item.id)||uid("node"));
+      tree[id]={id,p:parent,m:built};
+      parent=id;currentNode=id;
+    }
+  }
+  if(!Object.values(tree).some(n=>n.m))return null;
+  if(!currentNode||!tree[currentNode])currentNode=findBestLeaf(tree);
+  const chat={
+    id:String(raw.id||raw.conversation_id||raw.conversationId||uid("chat")),
+    title:"",created:0,updated:0,currentNode,msgs:[],tree,media,
+    favorite:false,folderIds:[],note:"",scroll:0,
+    source:{name:opts.sourceName||"",importedAt:Date.now()}
+  };
+  syncMsgs(chat);
+  chat.created=toMs(raw.create_time||raw.createTime||raw.created_at||raw.createdAt||raw.timestamp)||(chat.msgs[0]&&chat.msgs[0].time)||opts.fallbackTime||0;
+  chat.updated=toMs(raw.update_time||raw.updateTime||raw.updated_at||raw.updatedAt)||(chat.msgs.length&&chat.msgs[chat.msgs.length-1].time)||chat.created;
+  chat.title=cleanTitle(raw.title||raw.name)||cleanTitle((chat.msgs.find(m=>m.role==="user")||{}).text)||"Başlıksız sohbet";
+  return chat;
+}
+function extractConversations(data,depth){
+  depth=depth||0;
+  if(depth>5||!data)return[];
+  if(Array.isArray(data))return data.flatMap(x=>extractConversations(x,depth+1));
+  if(typeof data!=="object")return[];
+  if(data.mapping&&typeof data.mapping==="object")return[data];
+  if(Array.isArray(data.messages)&&data.messages.length)return[data];
+  if(Array.isArray(data.conversations))return data.conversations.flatMap(x=>extractConversations(x,depth+1));
+  for(const k of ["conversation","chat","data","result"]){
+    if(data[k]&&typeof data[k]==="object"){const r=extractConversations(data[k],depth+1);if(r.length)return r}
+  }
+  if(Array.isArray(data.items))return data.items.flatMap(x=>extractConversations(x,depth+1));
+  return[];
+}
+function mergeImportedChat(next,old){
+  if(!old)return next;
+  next.favorite=!!old.favorite;
+  next.folderIds=Array.isArray(old.folderIds)?old.folderIds.slice():[];
+  next.note=typeof old.note==="string"?old.note:"";
+  next.scroll=Number(old.scroll)||0;
+  const oldByKey=new Map((old.media||[]).map(m=>[m.key||mediaKey(m),m]));
+  next.media=next.media.map(m=>{
+    const o=oldByKey.get(m.key||mediaKey(m));
+    if(!o)return m;
+    if(o.blob||o.local||!o.missing){
+      return{...m,id:o.id,blob:o.blob||null,dataUrl:o.dataUrl||m.dataUrl,url:o.url||m.url,missing:false,local:!!o.local};
+    }
+    return m;
+  });
+  for(const o of old.media||[]){
+    if(o.source!=="manual"&&!o.local)continue;
+    const k=o.key||mediaKey(o);
+    if(!next.media.some(m=>(m.key||mediaKey(m))===k))next.media.push(o);
+  }
+  return next;
+}
+/* ---------- seçim / sıralama ---------- */
+function currentChat(){return state.chats.find(c=>c.id===state.activeId)||null}
+function chatById(id){return state.chats.find(c=>c.id===id)||null}
+function folderById(id){return state.folders.find(f=>f.id===id)||null}
+function visibleChats(){
+  const f=state.ui.filter||{type:"all"};
+  return state.chats.filter(c=>{
+    if(f.type==="favorites")return c.favorite;
+    if(f.type==="folder")return (c.folderIds||[]).includes(f.id);
+    if(f.type==="unfiled")return !(c.folderIds||[]).length;
+    return true;
+  });
+}
+function dateFieldForSort(){
+  const s=state.ui.sort;
+  return s.startsWith("created")?"created":"updated";
+}
+function sortChats(arr){
+  const s=state.ui.sort;
+  const out=[...arr];
+  const byTitle=(a,b)=>String(a.title||"").localeCompare(String(b.title||""),"tr",{sensitivity:"base"});
+  const byUpdated=(a,b)=>(b.updated||0)-(a.updated||0);
+  let cmp=byUpdated;
+  if(s==="updated-asc")cmp=(a,b)=>(a.updated||0)-(b.updated||0);
+  else if(s==="created-desc")cmp=(a,b)=>(b.created||0)-(a.created||0);
+  else if(s==="created-asc")cmp=(a,b)=>(a.created||0)-(b.created||0);
+  else if(s==="title-asc")cmp=byTitle;
+  else if(s==="title-desc")cmp=(a,b)=>byTitle(b,a);
+  else if(s==="messages-desc")cmp=(a,b)=>(b.msgs||[]).length-(a.msgs||[]).length;
+  else if(s==="messages-asc")cmp=(a,b)=>(a.msgs||[]).length-(b.msgs||[]).length;
+  else if(s==="custom"){
+    const om=new Map(state.order.map((id,i)=>[id,i]));
+    cmp=(a,b)=>{
+      const ai=om.has(a.id)?om.get(a.id):1e9,bi=om.has(b.id)?om.get(b.id):1e9;
+      return ai-bi||byTitle(a,b);
+    };
+  }
+  out.sort((a,b)=>cmp(a,b)||byTitle(a,b));
+  return out;
+}
+function matchChat(c,qf){
+  if(!qf)return{ok:true};
+  const fields=[{where:"başlık",text:c.title}];
+  if(c.note)fields.push({where:"not",text:c.note});
+  for(const m of c.msgs||[])fields.push({where:m.role==="user"?"sen":"Lumo",text:m.text});
+  for(const m of c.media||[])fields.push({where:"medya",text:m.name});
+  for(const f of fields){
+    if(f.text&&fold(f.text).includes(qf))return{ok:true,where:f.where,text:f.text};
+  }
+  return{ok:false};
+}
+
+/* ---------- kenar çubuğu ---------- */
+function renderSidebar(){
+  const q=state.ui.q||"";
+  const qf=fold(q.trim());
+  const base=visibleChats();
+  const matches=new Map();
+  let chats=base;
+  if(qf){
+    chats=base.filter(c=>{const m=matchChat(c,qf);if(m.ok)matches.set(c.id,m);return m.ok});
+  }
+  chats=sortChats(chats);
+  const favs=chats.filter(c=>c.favorite);
+  const rest=chats.filter(c=>!c.favorite);
+  renderFavorites(favs,matches,qf);
+  renderFolders();
+  renderChatList(rest,matches,qf);
+  $("#qClear").classList.toggle("hidden",!q);
+  updateStorageInfo();
+}
+function renderFavorites(favs,matches,qf){
+  const wrap=$("#favWrap");
+  const active=state.ui.filter.type==="favorites";
+  if(!favs.length&&!active){wrap.innerHTML="";return}
+  let html='<div class="section-head clickable'+(active?" active":"")+'" data-filter="favorites" title="Sadece favorileri göster"><span style="color:var(--gold);display:grid;place-items:center">'+icon("star")+'</span><span>Favoriler</span><span class="count">'+favs.length+'</span></div>';
+  if(favs.length)html+=favs.map(c=>renderChatItem(c,matches.get(c.id),qf)).join("");
+  else html+='<div class="empty-list" style="padding:10px 8px">Henüz favori sohbet yok.<br>Sohbetin yıldızına tıklayarak ekle.</div>';
+  wrap.innerHTML=html;
+}
+function renderFolders(){
+  const wrap=$("#folderWrap");
+  const f=state.ui.filter;
+  const unfiled=state.chats.filter(c=>!(c.folderIds||[]).length).length;
+  let html='<div class="section-head"><span>Klasörler</span><span class="count">'+state.folders.length+'</span><span class="sp"></span><button data-new-folder title="Yeni klasör">'+icon("plus")+'</button></div>';
+  for(const folder of state.folders){
+    const n=state.chats.filter(c=>(c.folderIds||[]).includes(folder.id)).length;
+    const active=f.type==="folder"&&f.id===folder.id;
+    html+='<div class="folder-row'+(active?" active":"")+'" data-folder="'+esc(folder.id)+'" style="--fc:'+esc(folder.color)+'" title="'+esc(folder.name)+'">'+
+      '<span class="folder-dot"></span><span class="fname">'+esc(folder.name)+'</span>'+
+      (folder.note?'<span class="fnote" title="Klasör notu var">'+icon("note")+'</span>':"")+
+      '<span class="n">'+n+'</span><button class="fmenu" data-folder-menu="'+esc(folder.id)+'" title="Klasör seçenekleri">'+icon("more")+'</button></div>';
+  }
+  if(unfiled){
+    const active=f.type==="unfiled";
+    html+='<div class="folder-row'+(active?" active":"")+'" data-folder="__unfiled" style="--fc:var(--muted)"><span class="folder-dot"></span><span class="fname">Klasörsüz</span><span class="n">'+unfiled+'</span></div>';
+  }
+  if(!state.folders.length&&!unfiled){
+    html+='<div class="empty-list" style="padding:10px 8px;font-size:11px">Henüz klasör yok. Sohbetleri düzenlemek için oluştur.</div>';
+  }
+  wrap.innerHTML=html;
+}
+function renderChatList(chats,matches,qf){
+  const wrap=$("#listWrap");
+  const f=state.ui.filter;
+  if(f.type==="favorites"){wrap.innerHTML="";return}
+  let html="";
+  const total=state.chats.length;
+  if(f.type==="folder"){
+    const folder=folderById(f.id);
+    if(folder){
+      html+='<div class="folder-banner" style="--fc:'+esc(folder.color)+'"><div class="fb-head"><span class="folder-dot"></span><b>'+esc(folder.name)+'</b><span class="sp"></span><button class="edit" data-folder-note="'+esc(folder.id)+'" title="Klasör notu">'+icon("note")+'</button></div><p>'+(folder.note?esc(folder.note):"Klasör notu eklemek için tıklayın.")+'</p></div>';
+    }
+  }
+  const label=qf?"Arama sonuçları":(f.type==="folder"?"Klasördeki sohbetler":f.type==="unfiled"?"Klasörsüz sohbetler":"Tüm sohbetler");
+  html+='<div class="section-head"><span>'+label+'</span><span class="count">'+chats.length+'</span></div>';
+  if(state.ui.sort==="custom")html+='<div class="sort-hint">'+icon("grip")+'<span>Özel sıra: sohbetleri sürükleyerek sırala.</span></div>';
+  if(!chats.length){
+    let msg=qf?"Eşleşen sohbet yok.":f.type==="folder"?"Bu klasörde henüz sohbet yok.":f.type==="unfiled"?"Klasörsüz sohbet yok.":total?"Bu filtrede sohbet yok.":"Henüz sohbet eklenmedi.<br>Yukarıdan JSON dosyası ekleyin.";
+    html+='<div class="empty-list">'+msg+"</div>";
+  }else if(qf||!(state.ui.sort.startsWith("updated")||state.ui.sort.startsWith("created"))){
+    html+=chats.map(c=>renderChatItem(c,matches.get(c.id),qf)).join("");
+  }else{
+    const field=dateFieldForSort();
+    let last="";
+    for(const c of chats){
+      const g=groupName(c[field]);
+      if(g!==last){html+='<div class="group-label">'+esc(g)+"</div>";last=g}
+      html+=renderChatItem(c,matches.get(c.id),qf);
+    }
+  }
+  wrap.innerHTML=html;
+}
+function renderChatItem(c,match,qf){
+  const active=c.id===state.activeId;
+  const field=dateFieldForSort();
+  let sub;
+  if(qf&&match){sub=match.where+": "+snippetMarked(match.text,qf)}
+  else{
+    sub=esc(fmtShort(c[field])+" · "+(c.msgs||[]).length+" mesaj");
+  }
+  const badges=(c.media&&c.media.length)?'<span title="'+c.media.length+' medya">'+icon("image")+c.media.length+"</span>":"";
+  const noteBadge=c.note?'<span title="Sohbet notu var" style="color:var(--gold)">'+icon("note")+"</span>":"";
+  return'<div class="item'+(active?" active":"")+'" data-id="'+esc(c.id)+'" draggable="true" title="'+esc(c.title)+'">'+
+    '<button class="star-btn'+(c.favorite?" active":"")+'" data-star="'+esc(c.id)+'" title="'+(c.favorite?"Favorilerden çıkar":"Favorilere ekle")+'">'+icon("star")+"</button>"+
+    '<div class="t"><b>'+esc(c.title)+"</b><span>"+sub+"</span></div>"+
+    '<div class="badges">'+(noteBadge||"")+badges+"</div>"+
+    '<button class="more-btn" data-menu="'+esc(c.id)+'" title="Sohbet seçenekleri">'+icon("more")+"</button></div>";
+}
+function updateStorageInfo(){
+  const media=state.chats.reduce((n,c)=>n+((c.media&&c.media.length)||0),0);
+  const el=$("#storageInfo");
+  if(el)el.textContent=state.chats.length+" sohbet"+(media?" · "+media+" medya":"");
+}
+function setFilter(filter){
+  state.ui.filter=filter;scheduleSave();renderSidebar();
+  document.body.classList.remove("menu");
+}
+function setSort(sort){
+  if(!SORT_VALUES.includes(sort))return;
+  state.ui.sort=sort;scheduleSave();renderSidebar();
+}
+/* ---------- Markdown ---------- */
+function inline(t){
+  const codes=[];
+  t=String(t).replace(/`([^`\n]+)`/g,(m,c)=>{codes.push(c);return"\u0000"+(codes.length-1)+"\u0000"});
+  t=esc(t);
+  t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|mailto:[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  t=t.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g,'$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+  t=t.replace(/\*\*\*([^*\n]+)\*\*\*/g,"<strong><em>$1</em></strong>");
+  t=t.replace(/\*\*([^*\n]+)\*\*/g,"<strong>$1</strong>");
+  t=t.replace(/__([^_\n]+)__/g,"<strong>$1</strong>");
+  t=t.replace(/(^|[^*\w])\*([^*\n]+)\*(?!\*)/g,"$1<em>$2</em>");
+  t=t.replace(/(^|[^_\w])_([^_\n]+)_(?![_\w])/g,"$1<em>$2</em>");
+  t=t.replace(/~~([^~\n]+)~~/g,"<del>$1</del>");
+  t=t.replace(/\u0000(\d+)\u0000/g,(m,i)=>'<code class="ic">'+esc(codes[i])+"</code>");
+  return t;
+}
+function renderListMd(lines,start){
+  const first=lines[start];
+  const base=first.match(/^(\s*)/)[1].length;
+  const ordered=/^\s*\d+[.)]\s/.test(first);
+  let html=ordered?"<ol>":"<ul>",i=start;
+  while(i<lines.length){
+    const l=lines[i];
+    const m=l.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+    if(!m){
+      if(l.trim()===""){
+        const nx=lines[i+1];
+        if(nx&&/^\s*([-*+]|\d+[.)])\s+/.test(nx)&&nx.match(/^(\s*)/)[1].length>=base){i++;continue}
+        break;
+      }
+      break;
+    }
+    const ind=m[1].length;
+    if(ind<base)break;
+    if(ind>base){const r=renderListMd(lines,i);html=html.replace(/<\/li>$/,"")+r.html+"</li>";i=r.next;continue}
+    html+="<li>"+inline(m[3])+"</li>";i++;
+  }
+  html+=ordered?"</ol>":"</ul>";
+  return{html,next:i};
+}
+function md(src){
+  const blocks=[];
+  src=String(src).replace(/\r\n?/g,"\n").replace(/```([^\n`]*)\n([\s\S]*?)```/g,(m,lang,code)=>{
+    blocks.push({lang:lang.trim(),code:code.replace(/\n$/,"")});return"\n\u0001"+(blocks.length-1)+"\u0001\n";
+  });
+  const lines=src.split("\n");let out="",i=0,para=[];
+  const flush=()=>{if(para.length){out+="<p>"+inline(para.join("\n")).replace(/\n/g,"<br>")+"</p>";para=[]}};
+  while(i<lines.length){
+    const l=lines[i];let m;
+    if(l.trim()===""){flush();i++;continue}
+    if((m=l.match(/^\u0001(\d+)\u0001$/))){
+      flush();const b=blocks[m[1]];
+      out+='<div class="code"><div class="bar"><span>'+esc(b.lang||"kod")+'</span><button class="cc">'+icon("copy")+"Kopyala</button></div><pre><code>"+esc(b.code)+"</code></pre></div>";i++;continue;
+    }
+    if((m=l.match(/^(#{1,4})\s+(.*)$/))){flush();out+="<h"+m[1].length+">"+inline(m[2])+"</h"+m[1].length+">";i++;continue}
+    if(/^\s*([-*_])(\s*\1){2,}\s*$/.test(l)){flush();out+="<hr>";i++;continue}
+    if(/^\s*>/.test(l)){
+      flush();const q=[];
+      while(i<lines.length&&/^\s*>/.test(lines[i])){q.push(lines[i].replace(/^\s*>\s?/,""));i++}
+      out+="<blockquote>"+md(q.join("\n"))+"</blockquote>";continue;
+    }
+    if(/^\s*\|.*\|\s*$/.test(l)&&i+1<lines.length&&/^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/.test(lines[i+1])){
+      flush();const cells=r=>r.trim().replace(/^\||\|$/g,"").split("|").map(c=>c.trim());
+      const head=cells(l);i+=2;const rows=[];
+      while(i<lines.length&&/^\s*\|.*\|\s*$/.test(lines[i])){rows.push(cells(lines[i]));i++}
+      out+='<div class="tbl"><table><thead><tr>'+head.map(c=>"<th>"+inline(c)+"</th>").join("")+"</tr></thead><tbody>"+
+        rows.map(r=>"<tr>"+head.map((_,k)=>"<td>"+inline(r[k]||"")+"</td>").join("")+"</tr>").join("")+"</tbody></table></div>";continue;
+    }
+    if(/^\s*([-*+]|\d+[.)])\s+/.test(l)){flush();const r=renderListMd(lines,i);out+=r.html;i=r.next;continue}
+    para.push(l);i++;
+  }
+  flush();return out;
+}
+
+/* ---------- sohbet görünümü ---------- */
+function versionsFor(chat,msg){
+  if(!chat||!msg||!msg.nodeId||!chat.tree[msg.nodeId])return[];
+  const node=chat.tree[msg.nodeId];
+  const entries=Object.entries(chat.tree);
+  const sibs=entries.filter(([,n])=>n.p===node.p&&n.m&&n.m.role===node.m.role&&(n.m.text||(n.m.att||[]).length));
+  if(sibs.length<2)return[];
+  sibs.sort((a,b)=>{
+    const d=(a[1].m.time||0)-(b[1].m.time||0);if(d)return d;
+    return entries.indexOf(a)-entries.indexOf(b);
+  });
+  return sibs.map(([id,n],i)=>({nodeId:id,text:n.m.text,time:n.m.time||0,model:n.m.model||"",current:id===msg.nodeId,index:i}));
+}
+function renderMessage(c,m,index){
+  const isU=m.role==="user";
+  const text=m.text?String(m.text):"";
+  const body=isU?esc(text):'<div class="md">'+md(text)+"</div>";
+  const empty=!text?'<span style="opacity:.72">Medya gönderildi</span>':"";
+  const atts=renderMessageAttachments(c,m);
+  const versions=versionsFor(c,m);
+  const hist=Array.isArray(m.history)?m.history:[];
+  const hasVersions=versions.length>1||hist.length>0;
+  const picker=hasVersions?renderVersionPicker(c,m,versions,hist):"";
+  return'<div class="msg '+m.role+'" data-node="'+esc(m.nodeId||"")+'">'+
+    '<div class="avatar">'+(isU?"Sen":icon("cat"))+'</div><div class="body"><div class="bubble">'+
+    (body||"")+empty+atts+"</div>"+
+    '<div class="info">'+(picker||"")+(!isU&&m.model?'<span class="chip">'+esc(m.model)+"</span>":"")+
+    "<span>"+esc(fmt(m.time))+"</span>"+
+    '<button class="copy" data-copy="'+esc(m.nodeId||"")+'">'+icon("copy")+"Kopyala</button>"+
+    '<button class="msg-act" data-edit-msg="'+esc(m.nodeId||"")+'" title="Mesajı düzenle / medya ekle">'+icon("edit")+"</button>"+
+    '<button class="msg-act danger" data-delete-msg="'+esc(m.nodeId||"")+'" title="Mesajı sil">'+icon("trash")+"</button>"+
+    "</div></div></div>";
+}
+function snippetForVersion(text){
+  const s=String(text||"").replace(/\s+/g," ").trim();
+  return s.length>30?s.slice(0,30)+"…":s;
+}
+function versionOptions(c,m){
+  const branches=versionsFor(c,m);
+  const hist=Array.isArray(m.history)?m.history:[];
+  const opts=[];
+  if(branches.length>1){
+    branches.forEach((v,i)=>{
+      opts.push({value:"branch:"+v.nodeId,title:"Sürüm "+(i+1),snippet:snippetForVersion(v.text),kind:"branch"});
+    });
+  }else{
+    opts.push({value:"current",title:"Güncel metin",snippet:snippetForVersion(m.text),kind:"current"});
+  }
+  hist.forEach((h,i)=>{
+    opts.push({value:"history:"+i,title:"Eski sürüm "+(i+1),snippet:snippetForVersion(h.text),kind:"history"});
+  });
+  return opts;
+}
+function renderVersionPicker(c,m,versions,hist){
+  const currentIndex=versions.findIndex(v=>v.current);
+  const label=versions.length>1?"Sürüm "+(currentIndex>=0?currentIndex+1:1):"Güncel";
+  return'<button class="version-picker" data-version-menu="'+esc(m.nodeId)+'" title="Sürüm seç">'+icon("rotate")+
+    '<span>'+esc(label)+"</span>"+icon("chevron")+"</button>";
+}
+function renderMessageAttachments(c,m){
+  if(!m.att||!m.att.length)return"";
+  const list=m.att.map(id=>c.media.find(x=>x.id===id)).filter(Boolean);
+  if(!list.length)return"";
+  return'<div class="msg-atts">'+list.map(mediaChip).join("")+"</div>";
+}
+function renderNoteCard(c){
+  return'<div class="chat-note"><div class="cn-head">'+icon("note")+"<span>Sohbet notu</span><span class=\"sp\"></span><button class=\"edit\" data-edit-chat-note title=\"Notu düzenle\">"+icon("note")+"</button></div><div class=\"cn-body\">"+esc(c.note)+"</div></div>";
+}
+function renderThreadAdd(c){
+  return'<div class="thread-add"><span class="ta-label">Bu sohbete mesaj ekle</span>'+
+    '<button data-add-msg="user">'+icon("plus")+"Sen olarak ekle</button>"+
+    '<button data-add-msg="assistant">'+icon("cat")+"Lumo olarak ekle</button></div>";
+}
+function renderThread(opts){
+  opts=opts||{};
+  const c=currentChat();if(!c)return;
+  const scroll=opts.scroll!=null?opts.scroll:$("#chat").scrollTop;
+  let html="";
+  if(c.note)html+=renderNoteCard(c);
+  html+=(c.msgs||[]).map((m,i)=>renderMessage(c,m,i)).join("");
+  html+=renderMediaBlock(c);
+  html+=renderThreadAdd(c);
+  $("#thread").innerHTML=html;
+  $("#chat").scrollTop=scroll;
+  if(findState.open&&findState.q)applyFind(false);
+}
+function updateHeader(){
+  const c=currentChat();
+  if(!c){
+    $("#ttl").textContent="Sohbet seçin";$("#meta").textContent="";
+    $("#favBtn").classList.remove("active");$("#noteBtn").classList.remove("active");
+    $("#mediaBadge").classList.add("hidden");document.title="Lumo Sohbet Okuyucu";return;
+  }
+  $("#ttl").textContent=c.title;
+  const mediaN=(c.media||[]).length;
+  $("#meta").textContent=(c.msgs||[]).length+" mesaj · "+fmt(c.created)+(mediaN?" · "+mediaN+" medya":"");
+  $("#favBtn").classList.toggle("active",!!c.favorite);
+  $("#favBtn").title=c.favorite?"Favorilerden çıkar":"Favorilere ekle";
+  $("#noteBtn").classList.toggle("active",!!c.note);
+  const badge=$("#mediaBadge");
+  badge.textContent=mediaN;badge.classList.toggle("hidden",!mediaN);
+  document.title=c.title+" · Lumo Okuyucu";
+}
+function openChat(id,opts){
+  const c=chatById(id);if(!c)return;
+  opts=opts||{};
+  state.activeId=id;scheduleSave();
+  $("#welcome").classList.add("hidden");
+  $("#chat").classList.remove("hidden");
+  updateHeader();
+  renderThread({scroll:opts.scroll!=null?opts.scroll:(c.scroll||0)});
+  renderSidebar();
+  document.body.classList.remove("menu");
+}
+function closeChat(){
+  state.activeId=null;scheduleSave();
+  $("#chat").classList.add("hidden");$("#welcome").classList.remove("hidden");
+  $("#thread").innerHTML="";
+  updateHeader();renderSidebar();closeFind();
+}
+function switchToBranch(nodeId){
+  const c=currentChat();if(!c||!c.tree[nodeId])return;
+  c.currentNode=latestLeafFrom(c.tree,nodeId);
+  syncMsgs(c);scheduleSave();
+  renderThread();
+  updateHeader();renderSidebar();
+  toast("Sürüm değiştirildi");
+}
+function handleVersionSelect(nodeId,value){
+  const c=currentChat();if(!c||!c.tree[nodeId])return;
+  if(value==="current")return;
+  if(value.startsWith("branch:")){switchToBranch(value.slice(7));return}
+  if(value.startsWith("history:")){
+    const idx=Number(value.slice(8));
+    const node=c.tree[nodeId],hist=node&&Array.isArray(node.m.history)?node.m.history:null;
+    const h=hist?hist[idx]:null;
+    if(!node||!h)return;
+    const oldText=node.m.text,oldAtt=Array.isArray(node.m.att)?[...node.m.att]:[];
+    hist.splice(idx,1);
+    node.m.text=h.text||"";
+    node.m.att=Array.isArray(h.att)?[...h.att]:[];
+    hist.push({text:oldText,time:Date.now(),label:"Önceki sürüm",att:oldAtt});
+    if(hist.length>20)hist.splice(0,hist.length-20);
+    c.updated=Date.now();syncMsgs(c);scheduleSave();renderThread();updateHeader();renderSidebar();
+    toast("Sürüm değiştirildi");
+  }
+}
+function openVersionPopover(anchor,nodeId){
+  const c=currentChat();if(!c||!c.tree[nodeId])return;
+  const msg=(c.msgs||[]).find(m=>m.nodeId===nodeId);if(!msg)return;
+  const versions=versionsFor(c,msg);
+  const opts=versionOptions(c,msg);
+  const currentValue=versions.length>1?"branch:"+nodeId:"current";
+  const pop=$("#popover");
+  pop.innerHTML='<div class="version-pop-head">Sürüm seç</div>'+opts.map(o=>{
+    const cur=o.value===currentValue;
+    return '<div class="version-row'+(cur?" current":"")+'" data-vrow="'+esc(o.value)+'">'+
+      '<div class="vr-main"><div class="vr-title">'+esc(o.title)+(cur?'<span class="vr-cur">Güncel</span>':'')+"</div>"+
+      (o.snippet?'<div class="vr-snip">'+esc(o.snippet)+"</div>":"")+"</div>"+
+      '<button class="vr-del" data-vdel="'+esc(o.value)+'" title="Bu sürümü sil">'+icon("trash")+"</button></div>";
+  }).join("");
+  pop.classList.remove("hidden");
+  pop.style.left="0px";pop.style.top="0px";
+  const r=anchor.getBoundingClientRect();
+  let x=r.right-8,y=r.bottom+4;
+  if(r.width<80){x=r.left;y=r.bottom+4}
+  const w=pop.offsetWidth,h=pop.offsetHeight,vw=innerWidth,vh=innerHeight;
+  x=Math.min(Math.max(8,x-w),vw-w-8);y=Math.min(y,vh-h-8);
+  pop.style.left=x+"px";pop.style.top=y+"px";
+  pop.onclick=e=>{
+    const del=e.target.closest("[data-vdel]");
+    if(del){e.stopPropagation();closePopover();deleteVersion(nodeId,del.dataset.vdel);return}
+    const row=e.target.closest("[data-vrow]");
+    if(row){closePopover();handleVersionSelect(nodeId,row.dataset.vrow)}
+  };
+}
+async function deleteVersion(nodeId,value){
+  const c=currentChat();if(!c||!c.tree[nodeId])return;
+  if(value==="current"){
+    const node=c.tree[nodeId],hist=Array.isArray(node.m.history)?node.m.history:[];
+    if(!hist.length){toast("Silinecek başka sürüm yok");return}
+    const ok=await askConfirm("Güncel sürümü sil","Güncel sürüm silinsin mi? En son eski sürüm güncel metin olarak kullanılacak. Diğer sürümler korunur.","Sil",true);
+    if(!ok)return;
+    const last=hist.pop();
+    node.m.text=last.text||"";
+    node.m.att=Array.isArray(last.att)?[...last.att]:[];
+    c.updated=Date.now();syncMsgs(c);scheduleSave();renderThread();updateHeader();renderSidebar();
+    toast("Güncel sürüm silindi");return;
+  }
+  if(value.startsWith("branch:")){
+    const branchId=value.slice(7),node=c.tree[branchId];
+    if(!node||!node.m)return;
+    const siblings=Object.entries(c.tree).filter(([,n])=>n.p===node.p&&n.m&&n.m.role===node.m.role&&(n.m.text||(n.m.att||[]).length));
+    if(siblings.length<=1){toast("En az bir sürüm kalmalı");return}
+    const isCurrent=pathTo(c.tree,c.currentNode).includes(branchId);
+    const ok=await askConfirm("Sürümü sil",(isCurrent?"Güncel sürüm ve bu sürüme bağlı sonraki mesajlar silinsin mi?":"Bu sürüm ve bu sürüme bağlı sonraki mesajlar silinsin mi?")+" Diğer sürümler korunur.","Sil",true);
+    if(!ok)return;
+    const toDelete=new Set([branchId]);let changed=true;
+    while(changed){
+      changed=false;
+      for(const [id,n] of Object.entries(c.tree)){
+        if(n.p&&toDelete.has(n.p)&&!toDelete.has(id)){toDelete.add(id);changed=true}
+      }
+    }
+    for(const id of toDelete)delete c.tree[id];
+    for(const m of c.media)if(toDelete.has(m.messageId))m.messageId=null;
+    if(isCurrent){
+      const alt=siblings.map(([id])=>id).find(id=>!toDelete.has(id));
+      c.currentNode=alt?latestLeafFrom(c.tree,alt):findBestLeaf(c.tree);
+    }
+    if(!c.tree[c.currentNode])c.currentNode=findBestLeaf(c.tree);
+    c.updated=Date.now();syncMsgs(c);scheduleSave();renderThread();updateHeader();renderSidebar();
+    toast("Sürüm silindi");return;
+  }
+  if(value.startsWith("history:")){
+    const idx=Number(value.slice(8)),node=c.tree[nodeId];
+    if(!node||!node.m)return;
+    const hist=Array.isArray(node.m.history)?node.m.history:[];
+    if(idx<0||idx>=hist.length)return;
+    const ok=await askConfirm("Sürümü sil","Bu eski sürüm silinsin mi? Diğer sürümler korunur.","Sil",true);
+    if(!ok)return;
+    hist.splice(idx,1);
+    c.updated=Date.now();syncMsgs(c);scheduleSave();renderThread();updateHeader();renderSidebar();
+    toast("Sürüm silindi");
+  }
+}
+
+/* ---------- sohbet içi arama ---------- */
+const findState={open:false,q:"",hits:[],index:0};
+function openFind(){
+  if(!currentChat())return;
+  findState.open=true;
+  $("#findbar").classList.remove("hidden");
+  const inp=$("#findInput");
+  inp.focus();inp.select();
+  if(findState.q){inp.value=findState.q;applyFind(true)}
+  else updateFindUI();
+}
+function closeFind(){
+  findState.open=false;findState.q="";findState.hits=[];findState.index=0;
+  $("#findbar").classList.add("hidden");
+  $("#findInput").value="";$("#findCount").textContent="0/0";
+  clearFindMarks();
+}
+function clearFindMarks(){
+  $$("#thread mark.find-hit").forEach(mark=>{
+    const p=mark.parentNode;if(!p)return;
+    p.replaceChild(document.createTextNode(mark.textContent||""),mark);
+    p.normalize();
+  });
+}
+function applyFind(scrollTo){
+  clearFindMarks();
+  findState.hits=[];findState.index=0;
+  const q=findState.q.trim();
+  if(!q||!currentChat()){updateFindUI();return}
+  const root=$("#thread");
+  if(!root)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){
+    if(!n.nodeValue||!n.nodeValue.trim())return NodeFilter.FILTER_REJECT;
+    const pe=n.parentElement;
+    if(!pe||pe.closest("mark.find-hit,script,style,textarea,.chat-note,.version-picker,.media-block"))return NodeFilter.FILTER_REJECT;
+    return NodeFilter.FILTER_ACCEPT;
+  }});
+  const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
+  const re=new RegExp(escapeRe(q),"gi");
+  for(const node of nodes){
+    const text=node.nodeValue;
+    let last=0,frag=null,m;
+    re.lastIndex=0;
+    while((m=re.exec(text))){
+      if(!frag)frag=document.createDocumentFragment();
+      if(m.index>last)frag.appendChild(document.createTextNode(text.slice(last,m.index)));
+      const mark=document.createElement("mark");
+      mark.className="find-hit";mark.textContent=m[0];
+      frag.appendChild(mark);findState.hits.push(mark);
+      last=m.index+m[0].length;
+      if(!m[0].length)re.lastIndex++;
+    }
+    if(frag){frag.appendChild(document.createTextNode(text.slice(last)));node.replaceWith(frag)}
+  }
+  if(findState.index>=findState.hits.length)findState.index=0;
+  updateFindUI(scrollTo!==false);
+}
+function updateFindUI(scrollTo){
+  const total=findState.hits.length;
+  if(!total){$("#findCount").textContent="0/0"}
+  else $("#findCount").textContent=(findState.index+1)+"/"+total;
+  $("#findPrev").disabled=!total;$("#findNext").disabled=!total;
+  findState.hits.forEach((h,i)=>h.classList.toggle("current",i===findState.index));
+  const cur=findState.hits[findState.index];
+  if(cur&&scrollTo){
+    const chat=$("#chat");
+    const top=cur.getBoundingClientRect().top-chat.getBoundingClientRect().top+chat.scrollTop;
+    chat.scrollTo({top:Math.max(0,top-chat.clientHeight/2),behavior:"smooth"});
+  }
+}
+function nextFind(dir){
+  const n=findState.hits.length;if(!n)return;
+  findState.index=(findState.index+dir+n)%n;
+  updateFindUI(true);
+}
+/* ---------- medya ---------- */
+const mediaUrls=new Map();
+let replaceMediaTarget=null;
+function getMediaSrc(m){
+  if(!m)return"";
+  if(m.dataUrl)return m.dataUrl;
+  if(m.url)return m.url;
+  if(m.blob instanceof Blob){
+    if(!mediaUrls.has(m.id))mediaUrls.set(m.id,URL.createObjectURL(m.blob));
+    return mediaUrls.get(m.id);
+  }
+  return"";
+}
+function releaseMediaUrl(m){
+  if(!m)return;
+  if(mediaUrls.has(m.id)){try{URL.revokeObjectURL(mediaUrls.get(m.id))}catch(e){}mediaUrls.delete(m.id)}
+}
+function mediaIcon(kind){return icon(kind==="image"?"image":kind==="video"?"video":kind==="audio"?"audio":"file")}
+function kindLabel(kind){return kind==="image"?"Görsel":kind==="video"?"Video":kind==="audio"?"Ses":"Dosya"}
+function mediaChip(m){
+  const src=getMediaSrc(m);
+  const thumb=m.kind==="image"&&src?'<img class="att-thumb" src="'+esc(src)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'<span class="att-ic">'+mediaIcon(m.kind)+"</span>";
+  return'<button class="att-chip" data-media-id="'+esc(m.id)+'" title="'+esc(m.name+(m.missing?" (dosya eksik)":""))+'">'+thumb+'<span class="an">'+esc(m.name)+"</span></button>";
+}
+function renderMediaBlock(c){
+  const list=c.media||[];
+  const collapsed=!!c.mediaCollapsed;
+  let html='<section class="media-block'+(collapsed?" collapsed":"")+'" id="mediaSection" data-media-drop="'+esc(c.id)+'">'+
+    '<div class="media-head"><h3>'+icon("image")+"Bu sohbetteki medyalar <span class=\"count\">"+list.length+"</span></h3><span class=\"sp\"></span>"+
+    '<button class="media-collapse" data-media-toggle aria-expanded="'+(!collapsed)+'" title="'+(collapsed?"Medyaları göster":"Medyaları daralt")+'">'+icon("chevron")+"</button>"+
+    '<button class="media-add" data-media-add>'+icon("plus")+"Medya ekle</button></div>"+
+    '<p class="media-sub">Lumo\'ya gönderdiğin dosyalar JSON\'da varsa burada görünür. Yoksa bilgisayarından ekleyebilirsin.</p>';
+  if(!list.length){
+    html+='<div class="media-empty" data-media-add>'+icon("image")+"<div><b>Henüz medya yok</b><br>Dosyaları buraya sürükle veya tıklayarak ekle.</div></div>";
+  }else{
+    html+='<div class="media-grid">'+list.map(mediaCard).join("")+"</div>";
+  }
+  return html+"</section>";
+}
+function mediaCard(m){
+  const src=getMediaSrc(m);
+  let preview="";
+  if(m.kind==="image"&&src){
+    preview='<img src="'+esc(src)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">';
+  }else if(m.kind==="video"&&src){
+    preview='<video src="'+esc(src)+'" muted preload="metadata"></video><span class="play">'+icon("play")+"</span>";
+  }
+  const source=m.source==="manual"?"Elle":"Lumo";
+  return'<div class="media-card'+(m.missing?" missing":"")+'" data-media-card="'+esc(m.id)+'">'+
+    '<div class="media-preview" data-media-id="'+esc(m.id)+'">'+
+      '<span class="micon">'+mediaIcon(m.kind)+"</span>"+preview+
+      '<span class="media-source'+(m.source==="manual"?" manual":"")+'">'+source+"</span>"+
+    "</div>"+
+    '<div class="media-info"><div class="media-name" title="'+esc(m.name)+'">'+esc(m.name)+"</div>"+
+      '<div class="media-meta">'+(m.missing?"Dosya bulunamadı":esc([sizeLabel(m.size),kindLabel(m.kind)].filter(Boolean).join(" · ")))+"</div></div>"+
+    '<div class="media-tools">'+
+      (m.missing?'<button class="repair" data-media-replace="'+esc(m.id)+'" title="Bilgisayardan dosya seç">'+icon("plus")+"Dosyayı bul</button>":"")+
+      '<button data-media-open="'+esc(m.id)+'" title="Önizle">'+icon("external")+"</button>"+
+      '<button data-media-download="'+esc(m.id)+'" title="İndir">'+icon("download")+"</button>"+
+      (!m.missing?'<button data-media-replace="'+esc(m.id)+'" title="Dosyayı değiştir">'+icon("rotate")+"</button>":"")+
+      '<button class="danger" data-media-remove="'+esc(m.id)+'" title="Medyayı kaldır">'+icon("trash")+"</button>"+
+    "</div></div>";
+}
+function makeManualMedia(file){
+  if(!(file instanceof Blob))return null;
+  const mime=file.type||mimeFromName(file.name);
+  return{
+    id:uid("media"),name:file.name||"Medya",mime,size:file.size||0,
+    kind:kindFromMime(mime,file.name),url:"",dataUrl:"",asset:"",source:"manual",
+    missing:false,local:true,messageId:null,key:"manual:"+uid("k"),blob:file
+  };
+}
+async function addMediaFiles(files,chatId){
+  const c=chatId?chatById(chatId):currentChat();
+  if(!c){toast("Önce bir sohbet açın");return}
+  const arr=[...files||[]];
+  if(!arr.length)return;
+  let n=0;
+  for(const f of arr){
+    const m=makeManualMedia(f);
+    if(!m)continue;
+    c.media.push(m);n++;
+  }
+  if(!n)return;
+  c.mediaCollapsed=false;c.updated=Date.now();
+  scheduleSave();updateHeader();renderSidebar();
+  renderThread();
+  toast(n+" medya eklendi");
+  const sec=$("#mediaSection");
+  if(sec)sec.scrollIntoView({block:"start",behavior:"smooth"});
+}
+function replaceMediaWithFile(mediaId,file){
+  const c=currentChat();if(!c||!file)return;
+  const m=c.media.find(x=>x.id===mediaId);if(!m)return;
+  releaseMediaUrl(m);
+  const mime=file.type||mimeFromName(file.name)||m.mime;
+  m.blob=file;m.name=file.name||m.name;m.mime=mime;m.size=file.size||0;
+  m.kind=kindFromMime(mime,m.name);m.url="";m.dataUrl="";m.missing=false;m.local=true;
+  m.key="manual:"+uid("k");
+  scheduleSave();updateHeader();renderSidebar();renderThread();
+  toast("Medya güncellendi");
+}
+async function removeMediaById(id){
+  const c=currentChat();if(!c)return;
+  const m=c.media.find(x=>x.id===id);if(!m)return;
+  const ok=await askConfirm("Medyayı kaldır","<b>"+esc(m.name)+"</b> bu sohbetten kaldırılsın mı? Dosya tarayıcı kaydından da silinir.","Kaldır",true);
+  if(!ok)return;
+  releaseMediaUrl(m);
+  c.media=c.media.filter(x=>x.id!==id);
+  for(const node of Object.values(c.tree))if(node.m&&Array.isArray(node.m.att))node.m.att=node.m.att.filter(x=>x!==id);
+  c.msgs.forEach(x=>{if(Array.isArray(x.att))x.att=x.att.filter(v=>v!==id)});
+  scheduleSave();updateHeader();renderSidebar();renderThread();
+  toast("Medya kaldırıldı");
+}
+function downloadMedia(m){
+  const src=getMediaSrc(m);
+  if(!src){toast("İndirilecek dosya bulunamadı");return}
+  const a=document.createElement("a");
+  a.href=src;a.download=m.name||"medya";
+  if(/^https?:/i.test(src)){a.target="_blank";a.rel="noopener noreferrer"}
+  document.body.appendChild(a);a.click();a.remove();
+}
+function openMediaLightbox(m){
+  const c=currentChat();if(!c||!m)return;
+  const src=getMediaSrc(m);
+  if(m.missing||!src){
+    const wrap=document.createElement("div");
+    wrap.className="confirm-text";
+    wrap.innerHTML="<p><b>"+esc(m.name)+"</b> dosyasının içeriği dışa aktarıma eklenmemiş.</p><p style=\"margin-top:8px\">Dosyayı bilgisayarından seçerek bu medyaya bağlayabilirsin.</p>";
+    const box=createModal({
+      title:"Eksik medya",
+      body:wrap,
+      footer:'<button class="btn ghost" data-close>Kapat</button><button class="btn primary" id="pickMissing">'+icon("plus")+"Dosyayı seç</button>"
+    });
+    box.onMount=()=>{
+      $("#pickMissing",box.overlay).onclick=()=>{
+        box.close();
+        replaceMediaTarget=m.id;
+        $("#replaceMediaFile").click();
+      };
+    };
+    return;
+  }
+  const body=document.createElement("div");
+  const preview=document.createElement("div");
+  preview.className="media-preview-box";
+  if(m.kind==="image"){
+    const img=document.createElement("img");img.src=src;img.alt=m.name;
+    img.onerror=()=>{preview.innerHTML='<div class="big-file">'+icon("image")+"<div>"+esc(m.name)+"</div><small>Görsel önizlenemiyor</small></div>"};
+    preview.appendChild(img);
+  }else if(m.kind==="video"){
+    const v=document.createElement("video");v.src=src;v.controls=true;v.preload="metadata";preview.appendChild(v);
+  }else if(m.kind==="audio"){
+    const a=document.createElement("audio");a.src=src;a.controls=true;preview.appendChild(a);
+  }else if(m.mime==="application/pdf"||/\.pdf$/i.test(m.name)){
+    const f=document.createElement("iframe");f.src=src;f.title=m.name;preview.appendChild(f);
+  }else{
+    preview.innerHTML='<div class="big-file">'+mediaIcon(m.kind)+"<div>"+esc(m.name)+"</div><small>"+esc([sizeLabel(m.size),m.mime].filter(Boolean).join(" · "))+"</small></div>";
+  }
+  body.appendChild(preview);
+  const meta=document.createElement("div");
+  meta.className="lightbox-meta";
+  meta.innerHTML="<span>"+esc(m.source==="manual"?"Elle eklendi":"Lumo dışa aktarımı")+"</span>"+(m.messageId?"<span class=\"dot\"></span><span>Bir mesaja bağlı</span>":"")+
+    (m.size?"<span class=\"dot\"></span><span>"+esc(sizeLabel(m.size))+"</span>":"")+
+    (!m.missing?'<span class="dot"></span><span>Dosya mevcut</span>':"");
+  body.appendChild(meta);
+  const box=createModal({
+    title:m.name,
+    body,
+    wide:true,
+    footer:'<button class="btn ghost" data-close>Kapat</button><button class="btn" id="dlMedia">'+icon("download")+"İndir</button>"+
+      '<button class="btn danger" id="rmMedia">'+icon("trash")+"Kaldır</button>"
+  });
+  box.onMount=()=>{
+    $("#dlMedia",box.overlay).onclick=()=>downloadMedia(m);
+    $("#rmMedia",box.overlay).onclick=async()=>{box.close();await removeMediaById(m.id)};
+  };
+}
+/* ---------- modallar ---------- */
+const modalStack=[];
+function createModal(opts){
+  opts=opts||{};
+  const overlay=document.createElement("div");overlay.className="overlay";
+  const panel=document.createElement("div");panel.className="modal"+(opts.wide?" wide":"");
+  panel.setAttribute("role","dialog");panel.setAttribute("aria-modal","true");
+  const head=document.createElement("div");head.className="modal-head";
+  head.innerHTML='<h3>'+esc(opts.title||"")+'</h3><button class="icon-btn" data-close title="Kapat">'+icon("close")+"</button>";
+  const bodyWrap=document.createElement("div");bodyWrap.className="modal-body";
+  if(opts.body instanceof Node)bodyWrap.appendChild(opts.body);
+  else bodyWrap.innerHTML=opts.body||"";
+  panel.appendChild(head);panel.appendChild(bodyWrap);
+  if(opts.footer){
+    const foot=document.createElement("div");foot.className="modal-foot";
+    foot.innerHTML=opts.footer;panel.appendChild(foot);
+  }
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+  modalStack.push(overlay);
+  let closed=false;
+  const api={overlay,panel,body:bodyWrap,close(){if(closed)return;closed=true;const i=modalStack.indexOf(overlay);if(i>=0)modalStack.splice(i,1);overlay.remove();if(opts.onClose)opts.onClose()},onMount:opts.onMount||null};
+  overlay.addEventListener("mousedown",e=>{if(e.target===overlay&&opts.dismissible!==false)api.close()});
+  $$("[data-close]",overlay).forEach(b=>b.addEventListener("click",()=>api.close()));
+  queueMicrotask(()=>{if(api.onMount)api.onMount(api)});
+  return api;
+}
+function askConfirm(title,message,label,danger){
+  return new Promise(resolve=>{
+    let done=false;
+    const finish=v=>{if(done)return;done=true;resolve(v)};
+    const box=createModal({
+      title,
+      body:'<p class="confirm-text">'+message+"</p>",
+      footer:'<button class="btn ghost" data-close>Vazgeç</button><button class="btn '+(danger?"danger":"primary")+'" data-ok>'+esc(label||"Onayla")+"</button>",
+      onClose:()=>finish(false)
+    });
+    box.onMount=()=>{const ok=$("[data-ok]",box.overlay);if(ok)ok.onclick=()=>{done=true;box.close();resolve(true)}};
+  });
+}
+function openNoteModal(kind,id){
+  const isChat=kind==="chat";
+  const target=isChat?chatById(id):folderById(id);
+  if(!target)return;
+  const body=document.createElement("div");
+  body.innerHTML='<div class="field"><label>'+(isChat?"Sohbet notu":"Klasör notu")+'</label><textarea id="noteArea" placeholder="Bu '+(isChat?"sohbet":"klasör")+' için notlarını yaz…"></textarea><div class="note-status" id="noteStatus"></div></div>'+
+    '<p style="margin:10px 0 0;color:var(--muted);font-size:11.5px">Notlar otomatik kaydedilir ve yalnızca bu tarayıcıda saklanır.</p>';
+  let draft=target.note||"",timer=null,saved=true;
+  const ta=$("#noteArea",body),status=$("#noteStatus",body);
+  ta.value=draft;
+  const commit=()=>{
+    const value=draft.trim();
+    if(isChat){const c=chatById(id);if(c)c.note=value}else{const f=folderById(id);if(f)f.note=value}
+    saved=true;status.textContent=value?"Kaydedildi":"Not temizlendi";scheduleSave();
+  };
+  const onInput=()=>{
+    draft=ta.value;saved=false;status.textContent="Yazıyor…";
+    clearTimeout(timer);timer=setTimeout(commit,420);
+  };
+  ta.addEventListener("input",onInput);
+  ta.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();commit();status.textContent="Kaydedildi"}});
+  const box=createModal({
+    title:isChat?("Sohbet notu — "+target.title):("Klasör notu — "+target.name),
+    body,
+    footer:'<button class="btn ghost" id="clearNote">Notu temizle</button><span class="sp"></span><button class="btn primary" data-close>Kapat</button>',
+    onClose:()=>{
+      clearTimeout(timer);
+      if(!saved)commit();
+      renderSidebar();updateHeader();
+      if(currentChat()&&isChat)renderThread();
+      if(!isChat&&state.ui.filter.type==="folder"&&state.ui.filter.id===id)renderSidebar();
+    }
+  });
+  box.onMount=()=>{
+    ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+    $("#clearNote",box.overlay).onclick=()=>{ta.value="";draft="";commit();ta.focus()};
+  };
+}
+function openFolderModal(folder){
+  const editing=!!folder;
+  let color=validColor(folder&&folder.color);
+  const body=document.createElement("div");
+  body.innerHTML='<div class="field"><label>Klasör adı</label><input type="text" id="folderName" maxlength="60" placeholder="Örn. Üniversite"></div>'+
+    '<div class="field"><label>Renk</label><div class="color-row" id="colorRow">'+FOLDER_COLORS.map(c=>'<button class="color-swatch'+(c===color?" sel":"")+'" data-color="'+c+'" style="--sc:'+c+'" title="'+c+'"></button>').join("")+"</div></div>"+
+    '<div class="field"><label>Not (isteğe bağlı)</label><textarea id="folderNote" class="short" placeholder="Klasörle ilgili notlar…"></textarea></div>';
+  const nameInput=$("#folderName",body),noteInput=$("#folderNote",body);
+  nameInput.value=folder?folder.name:"";noteInput.value=folder?folder.note:"";
+  const box=createModal({
+    title:editing?"Klasörü düzenle":"Yeni klasör",
+    body,
+    footer:'<button class="btn ghost" data-close>Vazgeç</button><button class="btn primary" id="saveFolder">'+icon("check")+(editing?"Kaydet":"Oluştur")+"</button>"
+  });
+  box.onMount=()=>{
+    nameInput.focus();
+    $("#colorRow",box.overlay).onclick=e=>{
+      const b=e.target.closest("[data-color]");if(!b)return;
+      color=b.dataset.color;
+      $$(".color-swatch",box.overlay).forEach(x=>x.classList.toggle("sel",x===b));
+    };
+    $("#saveFolder",box.overlay).onclick=()=>{
+      const name=nameInput.value.trim();
+      if(!name){nameInput.focus();toast("Klasör adı gerekli");return}
+      if(editing){
+        const f=folderById(folder.id);if(f){f.name=name;f.color=color;f.note=noteInput.value.trim()}
+      }else{
+        state.folders.push({id:uid("folder"),name,color,note:noteInput.value.trim(),created:Date.now()});
+      }
+      scheduleSave();renderSidebar();box.close();toast(editing?"Klasör güncellendi":"Klasör oluşturuldu");
+    };
+  };
+}
+function openChatFoldersModal(chatId){
+  const c=chatById(chatId);if(!c)return;
+  const selected=new Set(c.folderIds||[]);
+  const body=document.createElement("div");
+  body.innerHTML='<div class="check-list" id="folderChecks"></div>'+
+    '<div class="field" style="margin-top:8px"><label>Yeni klasör oluştur</label><div class="inline-create"><input type="text" id="quickFolder" maxlength="60" placeholder="Klasör adı"><button class="btn" id="quickCreate">'+icon("plus")+"Ekle</button></div></div>";
+  const list=$("#folderChecks",body);
+  const renderChecks=()=>{
+    if(!state.folders.length){list.innerHTML='<div class="empty-list" style="padding:14px">Henüz klasör yok. Aşağıdan oluşturabilirsin.</div>';return}
+    list.innerHTML=state.folders.map(f=>'<label class="check-row" style="--fc:'+esc(f.color)+'"><input type="checkbox" value="'+esc(f.id)+'"'+(selected.has(f.id)?" checked":"")+'><span class="dot"></span><span class="nm">'+esc(f.name)+"</span>"+(f.note?'<span class="nt">'+icon("note")+"</span>":"")+"</label>").join("");
+    $$("input[type=checkbox]",list).forEach(cb=>cb.addEventListener("change",()=>{if(cb.checked)selected.add(cb.value);else selected.delete(cb.value)}));
+  };
+  renderChecks();
+  const box=createModal({
+    title:"Sohbeti klasörlere ekle — "+c.title,
+    body,
+    footer:'<button class="btn ghost" data-close>Vazgeç</button><button class="btn primary" id="applyFolders">'+icon("check")+"Uygula</button>"
+  });
+  box.onMount=()=>{
+    const qf=$("#quickFolder",box.overlay);
+    $("#quickCreate",box.overlay).onclick=()=>{
+      const name=qf.value.trim();if(!name){qf.focus();return}
+      const f={id:uid("folder"),name,color:FOLDER_COLORS[state.folders.length%FOLDER_COLORS.length],note:"",created:Date.now()};
+      state.folders.push(f);selected.add(f.id);qf.value="";scheduleSave();renderChecks();renderSidebar();
+    };
+    qf.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();$("#quickCreate",box.overlay).click()}});
+    $("#applyFolders",box.overlay).onclick=()=>{
+      const cc=chatById(chatId);if(cc)cc.folderIds=[...selected];
+      scheduleSave();renderSidebar();box.close();toast("Klasörler güncellendi");
+    };
+  };
+}
+function openMessageEditor(chatId,nodeId,newRole){
+  const c=chatById(chatId);if(!c)return;
+  const editing=!!nodeId;
+  const node=editing?c.tree[nodeId]:null;
+  if(editing&&(!node||!node.m))return;
+  const role=editing?node.m.role:(newRole==="assistant"?"assistant":"user");
+  const keepAtt=new Set(editing?(node.m.att||[]):[]);
+  const pendingFiles=[];
+  const body=document.createElement("div");
+  body.innerHTML='<div class="field"><label>Kim yazıyor?</label>'+
+    (editing?'<div class="chip" style="display:inline-flex">'+(role==="user"?"Sen":"Lumo")+'</div>':'<select id="msgRole"><option value="user"'+(role==="user"?" selected":"")+'>Sen</option><option value="assistant"'+(role==="assistant"?" selected":"")+'>Lumo</option></select>')+
+    '</div>'+
+    '<div class="field"><label>Mesaj metni</label><textarea id="msgText" placeholder="Mesajı yaz…"></textarea></div>'+
+    '<div class="field"><label>Medya / dosyalar</label><div class="msg-atts-edit" id="msgAtts"></div>'+
+    '<button class="btn" id="msgAddFile" type="button">'+icon("plus")+'Dosya ekle</button><input type="file" id="msgFile" multiple hidden></div>'+
+    '<p style="margin:8px 0 0;color:var(--muted);font-size:11.5px">'+(editing?"Metin veya dosyalar değişirse eski içerik sürüm geçmişine eklenir.":"Yeni mesaj mevcut sohbetin sonuna eklenir.")+'</p>';
+  const ta=$("#msgText",body);
+  ta.value=editing?node.m.text:"";
+  const atts=$("#msgAtts",body), fileInput=$("#msgFile",body);
+  const renderAtts=()=>{
+    let html="";
+    for(const id of [...keepAtt]){
+      const m=c.media.find(x=>x.id===id);
+      if(!m){keepAtt.delete(id);continue}
+      html+='<div class="msg-att-row"><span class="ar-name">'+esc(m.name)+'</span><span class="ar-size">'+esc(m.missing?"eksik":sizeLabel(m.size))+'</span><button type="button" data-remove-existing="'+esc(id)+'" title="Mesajdan kaldır">'+icon("close")+"</button></div>";
+    }
+    pendingFiles.forEach((f,i)=>{
+      html+='<div class="msg-att-row"><span class="ar-name">'+esc(f.name)+'</span><span class="ar-size">'+esc(sizeLabel(f.size))+'</span><button type="button" data-remove-pending="'+i+'" title="Kaldır">'+icon("close")+"</button></div>";
+    });
+    atts.innerHTML=html||'<div class="msg-att-empty">Henüz dosya eklenmedi.</div>';
+  };
+  renderAtts();
+  const box=createModal({
+    title:editing?"Mesajı düzenle":"Yeni mesaj ekle",
+    body,
+    footer:'<button class="btn ghost" data-close>Vazgeç</button><button class="btn primary" id="saveMsg">'+icon("check")+"Kaydet</button>"
+  });
+  box.onMount=()=>{
+    ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);
+    $("#msgAddFile",box.overlay).onclick=()=>fileInput.click();
+    fileInput.onchange=e=>{pendingFiles.push(...e.target.files||[]);e.target.value="";renderAtts()};
+    atts.onclick=e=>{
+      const ex=e.target.closest("[data-remove-existing]");
+      if(ex){keepAtt.delete(ex.dataset.removeExisting);renderAtts();return}
+      const pe=e.target.closest("[data-remove-pending]");
+      if(pe){pendingFiles.splice(Number(pe.dataset.removePending),1);renderAtts()}
+    };
+    $("#saveMsg",box.overlay).onclick=()=>{
+      const text=ta.value.trim();
+      if(!text&&!keepAtt.size&&!pendingFiles.length){toast("Mesaj veya dosya gerekli");ta.focus();return}
+      const newIds=[];
+      for(const f of pendingFiles){
+        const m=makeManualMedia(f);
+        if(m){m.messageId=editing?nodeId:null;c.media.push(m);newIds.push(m.id)}
+      }
+      const now=Date.now();
+      if(editing){
+        const oldText=node.m.text||"",oldAtt=Array.isArray(node.m.att)?[...node.m.att]:[];
+        const newAtt=[...keepAtt,...newIds];
+        const changed=text!==oldText||newAtt.join("|")!==oldAtt.join("|");
+        if(changed&&(oldText.trim()||oldAtt.length)){
+          node.m.history=[...(node.m.history||[]),{text:oldText,time:now,label:"Düzenleme öncesi",att:oldAtt}].slice(-20);
+        }
+        node.m.text=text;
+        node.m.att=newAtt;
+      }else{
+        const id=uid("node");
+        const selectedRole=$("#msgRole",box.overlay)?.value==="assistant"?"assistant":"user";
+        c.tree[id]={id,p:c.currentNode||null,m:{role:selectedRole,text,time:now,model:selectedRole==="assistant"?"Elle eklendi":"",att:newIds,history:[]}};
+        for(const mid of newIds){const mm=c.media.find(x=>x.id===mid);if(mm)mm.messageId=id}
+        c.currentNode=id;
+      }
+      if(newIds.length)c.mediaCollapsed=false;
+      if(!c.created)c.created=now;
+      c.updated=now;
+      syncMsgs(c);scheduleSave();updateHeader();renderSidebar();renderThread();
+      if(!editing){
+        const all=$("#thread").querySelectorAll(".msg");
+        const last=all[all.length-1];
+        if(last)last.scrollIntoView({block:"center",behavior:"smooth"});
+      }
+      box.close();toast(editing?"Mesaj güncellendi":"Mesaj eklendi");
+    };
+  };
+}
+async function deleteMessage(chatId,nodeId){
+  const c=chatById(chatId);if(!c)return;
+  const node=c.tree[nodeId];if(!node||!node.m)return;
+  const ok=await askConfirm("Mesajı sil","Bu mesaj silinsin mi? Altındaki mesajlar korunur. Bu işlem geri alınamaz.","Sil",true);
+  if(!ok)return;
+  const parent=node.p;
+  for(const n of Object.values(c.tree))if(n.p===nodeId)n.p=parent;
+  delete c.tree[nodeId];
+  for(const m of c.media)if(m.messageId===nodeId)m.messageId=null;
+  if(c.currentNode===nodeId||!c.tree[c.currentNode]){
+    if(parent&&c.tree[parent])c.currentNode=latestLeafFrom(c.tree,parent);
+    else c.currentNode=findBestLeaf(c.tree);
+  }
+  c.updated=Date.now();
+  syncMsgs(c);scheduleSave();updateHeader();renderSidebar();renderThread();
+  toast("Mesaj silindi");
+}
+function openHelpModal(){
+  createModal({
+    title:"Kısayollar ve ipuçları",
+    body:'<div class="help-list">'+
+      "<div><kbd>Ctrl</kbd><span>+</span><kbd>K</kbd><span>tüm sohbetlerde ara</span></div>"+
+      "<div><kbd>Ctrl</kbd><span>+</span><kbd>F</kbd><span>açık sohbette ara</span></div>"+
+      "<div><kbd>Enter</kbd><span>sonraki eşleşme</span><span>·</span><kbd>Shift</kbd><span>+</span><kbd>Enter</kbd><span>önceki</span></div>"+
+      "<div><kbd>Esc</kbd><span>aramayı / pencereyi kapat</span></div>"+
+      "<div><kbd>Sürükle</kbd><span>sohbeti bir klasöre bırak</span></div>"+
+      "<div><kbd>Özel sıra</kbd><span>seçiliyken sohbetleri sürükleyerek diz</span></div>"+
+      "<div><kbd>Çift tık</kbd><span>sohbet başlığını yeniden adlandır</span></div>"+
+      "<div><kbd>Mesaj</kbd><span>üzerine gelince düzenle / sil düğmeleri</span></div>"+
+      "</div>"+
+      '<p style="margin:16px 0 0;font-size:12px;color:var(--muted);line-height:1.65">JSON içindeki medyalar otomatik algılanır. Lumo dosyaları dışa aktarımda yer almıyorsa <b>Medya ekle</b> ile bilgisayarından ekleyebilirsin. Mesajları düzenleyebilir, yeni mesaj ekleyebilir ve silebilirsin. Düzenlenmiş mesajların sürümlerini açılır seçiciden değiştirebilir, istemediğin sürümleri tek tek silebilirsin.</p>',
+    footer:'<button class="btn primary" data-close>Anladım</button>'
+  });
+}
+function openPopover(anchor,items){
+  const pop=$("#popover");
+  pop.innerHTML=items.map((it,i)=>{
+    if(it.sep)return'<div class="pop-sep"></div>';
+    return'<button class="pop-item'+(it.danger?" danger":"")+(it.checked?" checked":"")+'" data-pop="'+i+'">'+(it.icon||"")+"<span>"+esc(it.label)+"</span></button>";
+  }).join("");
+  pop.classList.remove("hidden");
+  let x=0,y=0;
+  if(anchor&&anchor.getBoundingClientRect){const r=anchor.getBoundingClientRect();x=r.right-8;y=r.bottom+4;if(r.width<80){x=r.left;y=r.bottom+4}}
+  else if(anchor&&typeof anchor==="object"){x=anchor.x||0;y=anchor.y||0}
+  pop.style.left="0px";pop.style.top="0px";
+  const w=pop.offsetWidth,h=pop.offsetHeight,vw=innerWidth,vh=innerHeight;
+  x=Math.min(Math.max(8,x-w),vw-w-8);y=Math.min(y,vh-h-8);
+  pop.style.left=x+"px";pop.style.top=y+"px";
+  pop.onclick=e=>{
+    const b=e.target.closest("[data-pop]");if(!b)return;
+    const it=items[+b.dataset.pop];pop.classList.add("hidden");
+    if(it&&it.action)it.action();
+  };
+}
+function closePopover(){$("#popover").classList.add("hidden")}
+async function toggleFavorite(id){
+  const c=chatById(id);if(!c)return;
+  c.favorite=!c.favorite;scheduleSave();renderSidebar();
+  if(c.id===state.activeId)updateHeader();
+  toast(c.favorite?"Favorilere eklendi":"Favorilerden çıkarıldı");
+}
+async function deleteChat(id){
+  const c=chatById(id);if(!c)return;
+  const ok=await askConfirm("Sohbeti kaldır","<b>"+esc(c.title)+"</b> listeden kaldırılsın mı? Tarayıcıdaki kaydı ve eklediğin medyalar silinir. JSON dosyasına dokunulmaz.","Kaldır",true);
+  if(!ok)return;
+  (c.media||[]).forEach(releaseMediaUrl);
+  state.chats=state.chats.filter(x=>x.id!==id);
+  state.order=state.order.filter(x=>x!==id);
+  if(state.activeId===id)closeChat();
+  scheduleSave();renderSidebar();toast("Sohbet kaldırıldı");
+}
+async function deleteFolder(id){
+  const f=folderById(id);if(!f)return;
+  const ok=await askConfirm("Klasörü sil","<b>"+esc(f.name)+"</b> klasörü silinsin mi? Sohbetler silinmez, yalnızca klasörden çıkarılır.","Sil",true);
+  if(!ok)return;
+  state.folders=state.folders.filter(x=>x.id!==id);
+  state.chats.forEach(c=>c.folderIds=(c.folderIds||[]).filter(x=>x!==id));
+  if(state.ui.filter.type==="folder"&&state.ui.filter.id===id)state.ui.filter={type:"all"};
+  scheduleSave();renderSidebar();toast("Klasör silindi");
+}
+function openRenameChatModal(id){
+  const c=chatById(id);if(!c)return;
+  const body=document.createElement("div");
+  body.innerHTML='<div class="field"><label>Sohbet adı</label><input type="text" id="chatName" maxlength="160" placeholder="Sohbet adı"></div>'+
+    '<p style="margin:8px 0 0;color:var(--muted);font-size:11.5px">Yeni ad yalnızca bu tarayıcıda saklanır; içe aktarılan JSON dosyası değişmez.</p>';
+  const inp=$("#chatName",body);inp.value=c.title;
+  const box=createModal({
+    title:"Sohbeti yeniden adlandır",
+    body,
+    footer:'<button class="btn ghost" data-close>Vazgeç</button><button class="btn primary" id="saveChatName">'+icon("check")+"Kaydet</button>"
+  });
+  box.onMount=()=>{
+    inp.focus();inp.select();
+    const save=()=>{
+      const name=inp.value.trim();
+      if(!name){toast("Sohbet adı gerekli");inp.focus();return}
+      c.title=name;scheduleSave();renderSidebar();updateHeader();box.close();toast("Sohbet adı güncellendi");
+    };
+    $("#saveChatName",box.overlay).onclick=save;
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();save()}});
+  };
+}
+function openChatMenu(id,anchor){
+  const c=chatById(id);if(!c)return;
+  openPopover(anchor,[
+    {label:c.favorite?"Favorilerden çıkar":"Favorilere ekle",icon:icon("star"),action:()=>toggleFavorite(id)},
+    {label:"Sohbeti yeniden adlandır",icon:icon("edit"),action:()=>openRenameChatModal(id)},
+    {label:"Klasörlere ekle…",icon:icon("folder"),action:()=>openChatFoldersModal(id)},
+    {label:"Sohbet notu",icon:icon("note"),action:()=>openNoteModal("chat",id)},
+    {label:"Medya ekle",icon:icon("image"),action:()=>{openChat(id);$("#mediaFile").click()}},
+    {sep:true},
+    {label:"Markdown indir",icon:icon("download"),action:()=>downloadMarkdown(c)},
+    {sep:true},
+    {label:"Sohbeti kaldır",icon:icon("trash"),danger:true,action:()=>deleteChat(id)}
+  ]);
+}
+function openFolderMenu(id,anchor){
+  const f=folderById(id);if(!f)return;
+  openPopover(anchor,[
+    {label:"Klasör notu",icon:icon("note"),action:()=>openNoteModal("folder",id)},
+    {label:"Yeniden adlandır / düzenle",icon:icon("folder"),action:()=>openFolderModal(f)},
+    {sep:true},
+    {label:"Klasörü sil",icon:icon("trash"),danger:true,action:()=>deleteFolder(id)}
+  ]);
+}
+function openExportMenu(anchor){
+  const c=currentChat();if(!c)return;
+  openPopover(anchor,[
+    {label:"Markdown olarak indir",icon:icon("download"),action:()=>downloadMarkdown(c)},
+    {label:"Tüm verileri yedekle (JSON)",icon:icon("json"),action:()=>downloadBackup()}
+  ]);
+}
+function safeName(s){return String(s||"sohbet").replace(/[\\/:*?"<>|]+/g,"_").replace(/\s+/g," ").trim().slice(0,90)||"sohbet"}
+function downloadText(text,filename,mime){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([text],{type:mime||"text/plain;charset=utf-8"}));
+  a.download=filename;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
+function markdownForChat(c){
+  let out="# "+c.title+"\n\n";
+  out+="*"+fmt(c.created)+" · "+(c.msgs||[]).length+" mesaj*";
+  if((c.media||[]).length)out+=" · "+c.media.length+" medya";
+  out+="\n\n";
+  if(c.favorite)out+="⭐ Favori\n\n";
+  if(c.note)out+="> **Sohbet notu:** "+c.note.replace(/\n/g,"\n> ")+"\n\n";
+  (c.msgs||[]).forEach(m=>{
+    out+="## "+(m.role==="user"?"Sen":"Lumo")+(m.time?" — "+fmt(m.time):"")+"\n\n";
+    out+=(m.text||"(medya)")+"\n\n";
+    if(Array.isArray(m.history)&&m.history.length){
+      out+="<details><summary>Önceki sürümler</summary>\n\n";
+      m.history.forEach(h=>{out+="**"+(h.label||"Önceki sürüm")+"**\n\n"+h.text+"\n\n"});
+      out+="</details>\n\n";
+    }
+    out+="---\n\n";
+  });
+  if((c.media||[]).length){
+    out+="## Bu sohbetteki medyalar\n\n";
+    c.media.forEach(m=>{out+="- **"+m.name+"**"+(m.size?" ("+sizeLabel(m.size)+")":"")+(m.missing?" — dosya eksik":"")+"\n"});
+    out+="\n";
+  }
+  return out;
+}
+function downloadMarkdown(c){
+  downloadText(markdownForChat(c),safeName(c.title)+".md","text/markdown;charset=utf-8");
+  toast("Markdown indiriliyor");
+}
+async function downloadBackup(){
+  const chats=await Promise.all(state.chats.map(async c=>({
+    ...c,
+    media:await Promise.all((c.media||[]).map(async m=>{
+      const o={...m};
+      if(o.blob instanceof Blob){try{o.dataUrl=await blobToDataURL(o.blob)}catch(e){}}
+      delete o.blob;return o;
+    }))
+  })));
+  const data={app:"lumo-okuyucu",version:APP_VERSION,exportedAt:new Date().toISOString(),folders:state.folders,chats,order:state.order,ui:state.ui};
+  downloadText(JSON.stringify(data,null,2),"lumo-okuyucu-yedek-"+new Date().toISOString().slice(0,10)+".json","application/json");
+  toast("Yedek indiriliyor");
+}
+/* ---------- içe aktarma ---------- */
+async function importJsonFiles(files){
+  const arr=[...files||[]].filter(f=>f);
+  if(!arr.length)return;
+  let added=0,updated=0,failed=0,found=0,lastId=null;
+  for(const f of arr){
+    let data;
+    try{data=JSON.parse(await f.text())}catch(e){failed++;continue}
+    const convs=extractConversations(data);
+    if(!convs.length){failed++;continue}
+    for(const raw of convs){
+      let next=null;
+      try{next=buildChatFromRaw(raw,{sourceName:f.name,fallbackTime:f.lastModified})}catch(e){console.warn(e);continue}
+      if(!next)continue;
+      found++;
+      const old=chatById(next.id);
+      if(old){
+        const merged=mergeImportedChat(next,old);
+        const ix=state.chats.findIndex(c=>c.id===next.id);
+        state.chats[ix]=merged;updated++;
+      }else{
+        state.chats.push(next);
+        if(!state.order.includes(next.id))state.order.push(next.id);
+        added++;
+      }
+      lastId=next.id;
+    }
+  }
+  if(lastId){state.activeId=lastId;scheduleSave()}
+  renderSidebar();
+  if(lastId)openChat(lastId);
+  if(found){
+    let m=added+" sohbet eklendi"+(updated?", "+updated+" güncellendi":"")+(failed?", "+failed+" dosya okunamadı":"");
+    toast(m);
+  }else{
+    toast(failed?"Geçerli bir Lumo sohbeti bulunamadı":"Eklenecek sohbet bulunamadı");
+  }
+}
+
+/* ---------- tema ---------- */
+function applyTheme(t){
+  const dark=t==="dark";
+  document.documentElement.dataset.theme=dark?"dark":"light";
+  state.settings=state.settings||{};
+  state.settings.theme=dark?"dark":"light";
+  try{localStorage.setItem("lumo-reader-theme",dark?"dark":"light")}catch(e){}
+  const b=$("#themeBtn");
+  if(b){b.title=dark?"Açık temaya geç":"Koyu temaya geç"}
+  scheduleSave();
+}
+function toggleTheme(){applyTheme(document.documentElement.dataset.theme==="dark"?"light":"dark")}
+
+/* ---------- sıralama / klasör işlemleri ---------- */
+function moveChatOrder(fromId,toId){
+  if(!fromId||!toId||fromId===toId)return;
+  const ids=[...state.order];
+  const fi=ids.indexOf(fromId),ti=ids.indexOf(toId);
+  if(fi<0||ti<0)return;
+  const item=ids.splice(fi,1)[0];
+  let insert=ti;
+  if(fi<ti)insert=ti-1;
+  ids.splice(insert,0,item);
+  state.order=ids;scheduleSave();renderSidebar();
+}
+function addChatToFolder(chatId,folderId){
+  const c=chatById(chatId);if(!c)return;
+  if(folderId==="__unfiled"){
+    c.folderIds=[];toast("Sohbet klasörlerden çıkarıldı");
+  }else{
+    const f=folderById(folderId);if(!f)return;
+    c.folderIds=c.folderIds||[];
+    if(!c.folderIds.includes(folderId))c.folderIds.push(folderId);
+    toast("“"+f.name+"” klasörüne eklendi");
+  }
+  scheduleSave();renderSidebar();
+}
+
+/* ---------- kenar çubuğu boyutu ---------- */
+function applySidebarPrefs(){
+  const w=Math.min(520,Math.max(260,Number(state.settings.sidebarWidth)||342));
+  $("#sidebar").style.width=w+"px";
+  document.body.classList.toggle("sidebar-collapsed",!!state.settings.sidebarCollapsed);
+}
+function setSidebarCollapsed(v){
+  state.settings.sidebarCollapsed=!!v;
+  document.body.classList.toggle("sidebar-collapsed",!!v);
+  scheduleSave();
+}
+function bindSidebarResize(){
+  const rz=$("#sidebarResizer"),sb=$("#sidebar");
+  if(!rz||!sb)return;
+  rz.addEventListener("pointerdown",e=>{
+    if(matchMedia("(max-width:980px)").matches)return;
+    e.preventDefault();
+    const startX=e.clientX,startW=sb.getBoundingClientRect().width;
+    document.body.classList.add("resizing");
+    try{rz.setPointerCapture(e.pointerId)}catch(err){}
+    const move=ev=>{
+      const w=Math.min(520,Math.max(260,startW+ev.clientX-startX));
+      sb.style.width=Math.round(w)+"px";
+    };
+    const finish=()=>{
+      document.body.classList.remove("resizing");
+      rz.removeEventListener("pointermove",move);
+      rz.removeEventListener("pointerup",finish);
+      rz.removeEventListener("pointercancel",finish);
+      state.settings.sidebarWidth=Math.round(sb.getBoundingClientRect().width);
+      scheduleSave();
+    };
+    rz.addEventListener("pointermove",move);
+    rz.addEventListener("pointerup",finish);
+    rz.addEventListener("pointercancel",finish);
+  });
+}
+
+/* ---------- kopyalama ---------- */
+async function copyText(text,btn){
+  try{await navigator.clipboard.writeText(text)}
+  catch(e){
+    const t=document.createElement("textarea");t.value=text;document.body.appendChild(t);t.select();
+    try{document.execCommand("copy")}catch(e2){}t.remove();
+  }
+  if(btn){const old=btn.innerHTML;btn.innerHTML=icon("check")+"Kopyalandı";setTimeout(()=>{btn.innerHTML=old},1200)}
+  else toast("Kopyalandı");
+}
+
+/* ---------- olaylar ---------- */
+let draggingChatId=null;
+let searchTimer=null;
+function bindStatic(){
+  $("#addBtn").onclick=$("#addBtn2").onclick=()=>$("#file").click();
+  $("#file").onchange=e=>{const f=[...e.target.files||[]];e.target.value="";importJsonFiles(f)};
+  $("#newFolderBtn").onclick=()=>openFolderModal();
+  $("#helpBtn").onclick=openHelpModal;
+  $("#themeBtn").onclick=toggleTheme;
+  $("#collapseBtn").onclick=()=>setSidebarCollapsed(true);
+  $("#expandBtn").onclick=()=>setSidebarCollapsed(false);
+  bindSidebarResize();
+  $("#ttl").title="Yeniden adlandırmak için çift tıkla";
+  $("#ttl").ondblclick=()=>{const c=currentChat();if(c)openRenameChatModal(c.id)};
+  $("#menuBtn").onclick=()=>document.body.classList.toggle("menu");
+  $("#scrim").onclick=()=>document.body.classList.remove("menu");
+  $("#sortSel").onchange=e=>setSort(e.target.value);
+
+  $("#q").addEventListener("input",e=>{
+    state.ui.q=e.target.value;
+    clearTimeout(searchTimer);
+    searchTimer=setTimeout(()=>{renderSidebar();scheduleSave()},100);
+    $("#qClear").classList.toggle("hidden",!e.target.value);
+  });
+  $("#q").addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();const first=$("#sidebar .item");if(first)openChat(first.dataset.id)}
+    if(e.key==="Escape"){e.preventDefault();$("#q").value="";state.ui.q="";renderSidebar();$("#q").blur()}
+  });
+  $("#qClear").onclick=()=>{$("#q").value="";state.ui.q="";renderSidebar();$("#q").focus()};
+
+  $("#sidebar").addEventListener("click",e=>{
+    const star=e.target.closest("[data-star]");
+    if(star){e.stopPropagation();toggleFavorite(star.dataset.star);return}
+    const menu=e.target.closest("[data-menu]");
+    if(menu){e.stopPropagation();openChatMenu(menu.dataset.menu,menu);return}
+    const fm=e.target.closest("[data-folder-menu]");
+    if(fm){e.stopPropagation();openFolderMenu(fm.dataset.folderMenu,fm);return}
+    if(e.target.closest("[data-new-folder]")){openFolderModal();return}
+    const fn=e.target.closest("[data-folder-note]");
+    if(fn){openNoteModal("folder",fn.dataset.folderNote);return}
+    const filter=e.target.closest("[data-filter]");
+    if(filter){
+      const active=state.ui.filter.type==="favorites";
+      setFilter(active?{type:"all"}:{type:"favorites"});return;
+    }
+    const frow=e.target.closest("[data-folder]");
+    if(frow){
+      const id=frow.dataset.folder;
+      const active=(id==="__unfiled"&&state.ui.filter.type==="unfiled")||(state.ui.filter.type==="folder"&&state.ui.filter.id===id);
+      if(active)setFilter({type:"all"});
+      else setFilter(id==="__unfiled"?{type:"unfiled"}:{type:"folder",id});
+      return;
+    }
+    const item=e.target.closest(".item");
+    if(item){openChat(item.dataset.id)}
+  });
+  $("#sidebar").addEventListener("contextmenu",e=>{
+    const item=e.target.closest(".item");const folder=e.target.closest(".folder-row[data-folder]");
+    if(item){e.preventDefault();openChatMenu(item.dataset.id,{x:e.clientX,y:e.clientY})}
+    else if(folder&&folder.dataset.folder!=="__unfiled"){e.preventDefault();openFolderMenu(folder.dataset.folder,{x:e.clientX,y:e.clientY})}
+  });
+
+  $("#sidebar").addEventListener("dragstart",e=>{
+    const item=e.target.closest(".item");if(!item)return;
+    draggingChatId=item.dataset.id;
+    item.classList.add("dragging");
+    try{e.dataTransfer.setData("text/plain",draggingChatId);e.dataTransfer.effectAllowed="move"}catch(err){}
+  });
+  $("#sidebar").addEventListener("dragend",e=>{
+    draggingChatId=null;
+    $$("#sidebar .dragging,#sidebar .drop-target").forEach(x=>x.classList.remove("dragging","drop-target"));
+  });
+  $("#sidebar").addEventListener("dragover",e=>{
+    const folder=e.target.closest(".folder-row[data-folder]");
+    const item=e.target.closest(".item");
+    if(folder){
+      e.preventDefault();e.dataTransfer.dropEffect="move";
+      $$("#sidebar .folder-row.drop-target").forEach(x=>{if(x!==folder)x.classList.remove("drop-target")});
+      folder.classList.add("drop-target");return;
+    }
+    if(item&&state.ui.sort==="custom"&&draggingChatId){
+      e.preventDefault();e.dataTransfer.dropEffect="move";
+      $$("#sidebar .item.drop-target").forEach(x=>{if(x!==item)x.classList.remove("drop-target")});
+      item.classList.add("drop-target");
+    }
+  });
+  $("#sidebar").addEventListener("dragleave",e=>{
+    const row=e.target.closest(".folder-row.drop-target,.item.drop-target");
+    if(row&&!row.contains(e.relatedTarget))row.classList.remove("drop-target");
+  });
+  $("#sidebar").addEventListener("drop",e=>{
+    const folder=e.target.closest(".folder-row[data-folder]");
+    if(folder){
+      e.preventDefault();e.stopPropagation();
+      folder.classList.remove("drop-target");
+      const id=draggingChatId||(e.dataTransfer&&e.dataTransfer.getData("text/plain"));
+      if(id)addChatToFolder(id,folder.dataset.folder);
+      return;
+    }
+    const item=e.target.closest(".item");
+    if(item&&state.ui.sort==="custom"){
+      e.preventDefault();e.stopPropagation();
+      item.classList.remove("drop-target");
+      const id=draggingChatId||(e.dataTransfer&&e.dataTransfer.getData("text/plain"));
+      if(id)moveChatOrder(id,item.dataset.id);
+    }
+  });
+
+  $("#favBtn").onclick=()=>{const c=currentChat();if(c)toggleFavorite(c.id)};
+  $("#noteBtn").onclick=()=>{const c=currentChat();if(c)openNoteModal("chat",c.id)};
+  $("#mediaBtn").onclick=()=>{
+    const sec=$("#mediaSection");
+    if(sec)sec.scrollIntoView({block:"start",behavior:"smooth"});
+    else toast("Önce bir sohbet açın");
+  };
+  $("#findBtn").onclick=()=>{findState.open?closeFind():openFind()};
+  $("#exportBtn").onclick=e=>{e.stopPropagation();const c=currentChat();if(c)openExportMenu(e.currentTarget)};
+
+  $("#findInput").addEventListener("input",e=>{
+    findState.q=e.target.value;findState.index=0;applyFind(true);
+  });
+  $("#findInput").addEventListener("keydown",e=>{
+    if(e.key==="Enter"){e.preventDefault();nextFind(e.shiftKey?-1:1)}
+    else if(e.key==="Escape"){e.preventDefault();closeFind()}
+  });
+  $("#findPrev").onclick=()=>nextFind(-1);
+  $("#findNext").onclick=()=>nextFind(1);
+  $("#findClose").onclick=closeFind;
+
+  $("#thread").addEventListener("click",e=>{
+    const copyBtn=e.target.closest("[data-copy]");
+    if(copyBtn){
+      const c=currentChat();const msg=c&&c.msgs.find(m=>m.nodeId===copyBtn.dataset.copy);
+      if(msg)copyText(msg.text||"",copyBtn);return;
+    }
+    const cc=e.target.closest(".cc");
+    if(cc){const code=cc.closest(".code")?.querySelector("code");if(code)copyText(code.textContent||"",cc);return}
+    const vmenu=e.target.closest("[data-version-menu]");
+    if(vmenu){e.stopPropagation();openVersionPopover(vmenu,vmenu.dataset.versionMenu);return}
+    const editMsg=e.target.closest("[data-edit-msg]");
+    if(editMsg){const c=currentChat();if(c)openMessageEditor(c.id,editMsg.dataset.editMsg);return}
+    const delMsg=e.target.closest("[data-delete-msg]");
+    if(delMsg){const c=currentChat();if(c)deleteMessage(c.id,delMsg.dataset.deleteMsg);return}
+    const addMsg=e.target.closest("[data-add-msg]");
+    if(addMsg){const c=currentChat();if(c)openMessageEditor(c.id,null,addMsg.dataset.addMsg);return}
+    const editNote=e.target.closest("[data-edit-chat-note]");
+    if(editNote){const c=currentChat();if(c)openNoteModal("chat",c.id);return}
+    const mediaToggle=e.target.closest("[data-media-toggle]");
+    if(mediaToggle){
+      const c=currentChat(),block=mediaToggle.closest(".media-block");
+      if(c&&block){
+        const next=!block.classList.contains("collapsed");
+        block.classList.toggle("collapsed",next);
+        c.mediaCollapsed=next;
+        mediaToggle.setAttribute("aria-expanded",next?"false":"true");
+        mediaToggle.title=next?"Medyaları göster":"Medyaları daralt";
+        scheduleSave();
+      }
+      return;
+    }
+    const addM=e.target.closest("[data-media-add]");
+    if(addM){$("#mediaFile").click();return}
+    const rep=e.target.closest("[data-media-replace]");
+    if(rep){replaceMediaTarget=rep.dataset.mediaReplace;$("#replaceMediaFile").click();return}
+    const dl=e.target.closest("[data-media-download]");
+    if(dl){const c=currentChat();const m=c&&c.media.find(x=>x.id===dl.dataset.mediaDownload);if(m)downloadMedia(m);return}
+    const rm=e.target.closest("[data-media-remove]");
+    if(rm){removeMediaById(rm.dataset.mediaRemove);return}
+    const open=e.target.closest("[data-media-id]");
+    if(open){const c=currentChat();const m=c&&c.media.find(x=>x.id===open.dataset.mediaId);if(m)openMediaLightbox(m);return}
+    const mo=e.target.closest("[data-media-open]");
+    if(mo){const c=currentChat();const m=c&&c.media.find(x=>x.id===mo.dataset.mediaOpen);if(m)openMediaLightbox(m)}
+  });
+
+  $("#thread").addEventListener("dragover",e=>{
+    const zone=e.target.closest("[data-media-drop]");
+    if(zone&&e.dataTransfer&&[...e.dataTransfer.types].includes("Files")){
+      e.preventDefault();e.stopPropagation();
+      const empty=$(".media-empty",zone);if(empty)empty.classList.add("over");
+    }
+  });
+  $("#thread").addEventListener("dragleave",e=>{
+    const empty=e.target.closest(".media-empty.over");
+    if(empty&&!empty.contains(e.relatedTarget))empty.classList.remove("over");
+  });
+  $("#thread").addEventListener("drop",e=>{
+    const zone=e.target.closest("[data-media-drop]");
+    if(!zone)return;
+    if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files")){
+      e.preventDefault();e.stopPropagation();
+      $(".media-empty.over",zone)?.classList.remove("over");
+      addMediaFiles([...(e.dataTransfer.files||[])],zone.dataset.mediaDrop);
+    }
+  });
+
+  $("#mediaFile").onchange=e=>{const f=[...e.target.files||[]];e.target.value="";addMediaFiles(f)};
+  $("#replaceMediaFile").onchange=e=>{
+    const f=e.target.files&&e.target.files[0];e.target.value="";
+    if(f&&replaceMediaTarget){replaceMediaWithFile(replaceMediaTarget,f);replaceMediaTarget=null}
+  };
+
+  let scrollTimer=null;
+  $("#chat").addEventListener("scroll",()=>{
+    const c=currentChat();if(!c)return;
+    clearTimeout(scrollTimer);
+    scrollTimer=setTimeout(()=>{c.scroll=$("#chat").scrollTop;scheduleSave()},450);
+  });
+
+  document.addEventListener("click",e=>{
+    if(!e.target.closest("#popover"))closePopover();
+  });
+
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){
+      if(!$("#popover").classList.contains("hidden")){closePopover();return}
+      if(modalStack.length){const top=modalStack[modalStack.length-1];const close=top.querySelector("[data-close]");if(close)close.click();return}
+      if(findState.open){closeFind();return}
+      if(document.body.classList.contains("menu")){document.body.classList.remove("menu");return}
+    }
+    const mod=e.ctrlKey||e.metaKey;
+    if(mod&&e.key.toLowerCase()==="k"){e.preventDefault();$("#q").focus();$("#q").select();return}
+    if(mod&&e.key.toLowerCase()==="f"){e.preventDefault();if(currentChat())openFind();return}
+  });
+
+  let dragCount=0;
+  addEventListener("dragenter",e=>{
+    if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files")){dragCount++;document.body.classList.add("dragging")}
+  });
+  addEventListener("dragleave",()=>{dragCount=Math.max(0,dragCount-1);if(!dragCount)document.body.classList.remove("dragging")});
+  addEventListener("dragover",e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes("Files"))e.preventDefault()});
+  addEventListener("drop",e=>{
+    if(!(e.dataTransfer&&[...e.dataTransfer.types].includes("Files")))return;
+    e.preventDefault();dragCount=0;document.body.classList.remove("dragging");
+    const files=[...(e.dataTransfer.files||[])];
+    if(!files.length)return;
+    const json=files.filter(f=>/\.json$/i.test(f.name)||f.type==="application/json");
+    const others=files.filter(f=>!json.includes(f));
+    if(json.length)importJsonFiles(json);
+    if(others.length){if(currentChat())addMediaFiles(others);else toast("Medya eklemek için önce bir sohbet açın")}
+    if(!json.length&&!others.length)toast("Desteklenen dosya bulunamadı");
+  });
+
+  addEventListener("resize",closePopover);
+  addEventListener("pagehide",()=>{if(currentChat())currentChat().scroll=$("#chat").scrollTop;saveNow()});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")saveNow()});
+}
+
+/* ---------- başlangıç ---------- */
+async function init(){
+  bindStatic();
+  state=await loadState();
+  const savedTheme=state.settings.theme||localStorage.getItem("lumo-reader-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");
+  document.documentElement.dataset.theme=savedTheme==="dark"?"dark":"light";
+  state.settings.theme=savedTheme==="dark"?"dark":"light";
+  applySidebarPrefs();
+  $("#sortSel").value=state.ui.sort;
+  $("#q").value=state.ui.q||"";
+  $("#qClear").classList.toggle("hidden",!state.ui.q);
+  renderSidebar();
+  if(state.activeId&&chatById(state.activeId))openChat(state.activeId);
+  else{
+    $("#welcome").classList.remove("hidden");
+    $("#chat").classList.add("hidden");
+    updateHeader();
+  }
+  updateStorageInfo();
+  window.__lumoReady=true;
+}
+init();
+
+})();
+</script>
+</body>
+</html>
